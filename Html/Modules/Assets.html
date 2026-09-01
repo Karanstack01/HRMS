@@ -1,0 +1,253 @@
+<div id="module-assets" class="module-container" style="display:none;">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Asset & Equipment Management</h1>
+      <p class="page-subtitle">Track assigned hardware, raise equipment requests, and manage inventory.</p>
+    </div>
+    <div>
+      <button class="btn btn-primary" id="assets-add-btn" onclick="openAddAssetModal()" style="display:none;">
+        <span class="icon-slot" data-icon="plus"></span>
+        <span>Add Asset</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Sub Tabs -->
+  <div style="display:flex; gap:16px; margin-bottom:20px; border-bottom:1px solid var(--sd-border); padding-bottom:12px;">
+    <button class="btn btn-secondary btn-sm active-tab" id="tab-assets-my" onclick="switchAssetsTab('my')">My Assigned Assets</button>
+    <button class="btn btn-secondary btn-sm" id="tab-assets-req" onclick="switchAssetsTab('req')">Request Equipment</button>
+    <button class="btn btn-secondary btn-sm" id="tab-assets-inv" onclick="switchAssetsTab('inv')" style="display:none;">Full Inventory</button>
+  </div>
+
+  <!-- Section: My Assigned Assets -->
+  <div id="assets-my-container">
+    <div id="assets-my-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px;">
+      <!-- Populated via JS -->
+    </div>
+  </div>
+
+  <!-- Section: Request Equipment -->
+  <div id="assets-req-container" class="card" style="display:none; max-width:600px;">
+    <h3 class="card-title" style="margin-bottom:16px;">Request Equipment / Hardware</h3>
+    <form onsubmit="event.preventDefault(); submitAssetRequest();">
+      <div class="form-group">
+        <label class="form-label">Category *</label>
+        <select id="ast-req-cat" class="form-control" required>
+          <option value="Laptop / Workstation">Laptop / Workstation</option>
+          <option value="Monitor / Display">Monitor / Display</option>
+          <option value="Keyboard & Mouse">Keyboard & Mouse</option>
+          <option value="Headset / Audio">Headset / Audio</option>
+          <option value="Mobile / Tablet">Mobile / Tablet</option>
+          <option value="Other Accessory">Other Accessory</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Business Justification *</label>
+        <textarea id="ast-req-reason" class="form-control" placeholder="Describe the purpose or equipment specification needed..." required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Submit Request</button>
+    </form>
+  </div>
+
+  <!-- Section: Full Inventory (Admin/HR) -->
+  <div id="assets-inv-container" class="card" style="display:none;">
+    <div class="card-header">
+      <h3 class="card-title">Hardware Inventory Master</h3>
+    </div>
+    <div class="table-container" style="border:none; box-shadow:none;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Tag / ID</th>
+            <th>Category</th>
+            <th>Brand & Model</th>
+            <th>Serial No</th>
+            <th>Status</th>
+            <th>Assigned To</th>
+            <th style="text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="assets-inv-tbody">
+          <!-- Populated via JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+let assetsData = null;
+
+function loadModule_assets() {
+  const user = App.user;
+  if (user && (user.role === 'admin' || user.role === 'hr')) {
+    document.getElementById('assets-add-btn').style.display = 'inline-flex';
+    document.getElementById('tab-assets-inv').style.display = 'inline-flex';
+  }
+
+  callApi('Api_Assets_list', [], function(res) {
+    assetsData = res;
+    renderMyAssets(res.myAssets || []);
+    if (user && (user.role === 'admin' || user.role === 'hr')) {
+      renderInventory(res.allAssets || []);
+    }
+  }, showToastError);
+}
+
+function renderMyAssets(list) {
+  const mount = document.getElementById('assets-my-grid');
+  if (!mount) return;
+
+  if (!list.length) {
+    mount.innerHTML = `<div class="card" style="grid-column:1/-1; text-align:center; padding:40px; color:var(--sd-text-muted);">No hardware assets currently assigned to you.</div>`;
+    return;
+  }
+
+  mount.innerHTML = list.map(a => `
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+        <span class="pill pill-holiday">${a.category}</span>
+        <span class="pill pill-approved">${a.condition}</span>
+      </div>
+      <h4 style="font-size:16px; font-weight:700; color:var(--sd-text-primary); margin-bottom:4px;">${a.brandModel}</h4>
+      <p style="font-size:12px; color:var(--sd-text-muted); margin-bottom:12px;">Tag: <code>${a.assetTag}</code> | S/N: ${a.serialNumber}</p>
+      <div style="font-size:12px; color:var(--sd-text-secondary); border-top:1px solid var(--sd-border-light); padding-top:10px;">
+        Assigned on: <strong>${a.assignedOn || '—'}</strong>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderInventory(list) {
+  const tbody = document.getElementById('assets-inv-tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = list.map(a => `
+    <tr>
+      <td><strong>${a.assetTag}</strong></td>
+      <td>${a.category}</td>
+      <td>${a.brandModel}</td>
+      <td><code>${a.serialNumber}</code></td>
+      <td><span class="pill pill-${a.status === 'Assigned' ? 'approved' : 'pending'}">${a.status}</span></td>
+      <td>${a.assignedTo ? `<code>${a.assignedTo}</code>` : '—'}</td>
+      <td style="text-align:right;">
+        ${a.status === 'In Stock' ? `
+          <button class="btn btn-primary btn-sm" onclick="openAssignModal('${a.assetId}')">Assign</button>
+        ` : `
+          <button class="btn btn-secondary btn-sm" onclick="returnAsset('${a.assetId}')">Return</button>
+        `}
+      </td>
+    </tr>
+  `).join('');
+}
+
+function switchAssetsTab(tab) {
+  document.getElementById('tab-assets-my').classList.toggle('active-tab', tab === 'my');
+  document.getElementById('tab-assets-req').classList.toggle('active-tab', tab === 'req');
+  document.getElementById('tab-assets-inv').classList.toggle('active-tab', tab === 'inv');
+
+  document.getElementById('assets-my-container').style.display = tab === 'my' ? 'block' : 'none';
+  document.getElementById('assets-req-container').style.display = tab === 'req' ? 'block' : 'none';
+  document.getElementById('assets-inv-container').style.display = tab === 'inv' ? 'block' : 'none';
+}
+
+function submitAssetRequest() {
+  const cat = document.getElementById('ast-req-cat').value;
+  const reason = document.getElementById('ast-req-reason').value;
+
+  callApi('Api_Assets_request', [cat, reason], function() {
+    showToast('Equipment request submitted to IT/Admin ✓', 'success');
+    document.getElementById('ast-req-reason').value = '';
+    switchAssetsTab('my');
+  }, showToastError);
+}
+
+function openAddAssetModal() {
+  const bodyHtml = `
+    <form id="add-ast-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Asset Tag *</label>
+          <input type="text" id="ast-tag" class="form-control" placeholder="e.g. AST-0042" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category *</label>
+          <input type="text" id="ast-cat" class="form-control" placeholder="Laptop, Monitor" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Brand & Model *</label>
+          <input type="text" id="ast-brand" class="form-control" placeholder="MacBook Pro M3 16" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Serial Number</label>
+          <input type="text" id="ast-sn" class="form-control" placeholder="C02X9012J">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Purchase Value (₹)</label>
+          <input type="number" id="ast-val" class="form-control" placeholder="150000">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Condition</label>
+          <select id="ast-cond" class="form-control">
+            <option value="New">New</option>
+            <option value="Good">Good</option>
+            <option value="Refurbished">Refurbished</option>
+          </select>
+        </div>
+      </div>
+    </form>
+  `;
+
+  showAppModal('Add Asset to Inventory', bodyHtml, 'Create Asset', function() {
+    const payload = {
+      assetTag: document.getElementById('ast-tag').value,
+      category: document.getElementById('ast-cat').value,
+      brandModel: document.getElementById('ast-brand').value,
+      serialNumber: document.getElementById('ast-sn').value,
+      value: document.getElementById('ast-val').value,
+      condition: document.getElementById('ast-cond').value,
+      requestId: newRequestId()
+    };
+
+    callApi('Api_Assets_create', [payload], function() {
+      closeAppModal();
+      showToast('Asset added to inventory', 'success');
+      loadModule_assets();
+    }, showToastError);
+  });
+}
+
+function openAssignModal(assetId) {
+  const employees = (typeof dirEmployeesCache !== 'undefined') ? dirEmployeesCache.filter(e => e.status === 'active') : [];
+  const bodyHtml = `
+    <div class="form-group">
+      <label class="form-label">Select Employee to Assign</label>
+      <select id="assign-emp-select" class="form-control">
+        ${employees.map(e => `<option value="${e.empId}">${e.fullName} (${e.empId} - ${e.department})</option>`).join('')}
+      </select>
+    </div>
+  `;
+
+  showAppModal('Assign Asset', bodyHtml, 'Confirm Assignment', function() {
+    const empId = document.getElementById('assign-emp-select')?.value;
+    if (!empId) return;
+    callApi('Api_Assets_assign', [assetId, empId], function() {
+      closeAppModal();
+      showToast('Asset assigned successfully ✓', 'success');
+      loadModule_assets();
+    }, showToastError);
+  });
+}
+
+function returnAsset(assetId) {
+  if (!confirm('Return this asset back to stock?')) return;
+  callApi('Api_Assets_return', [assetId], function() {
+    showToast('Asset returned to stock', 'info');
+    loadModule_assets();
+  }, showToastError);
+}
+</script>

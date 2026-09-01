@@ -1,0 +1,153 @@
+<!-- Client-Side Core Controller, Hash Router, and API Bridge -->
+<div id="toast-container"></div>
+
+<script>
+  const App = {
+    user: null,
+    nav: [],
+    orgName: 'StackDrove Technologies',
+    currency: 'INR',
+    punchStatus: { isPunchedIn: false },
+    currentModule: 'dashboard'
+  };
+
+  /**
+   * Universal API Bridge for calling server-side Google Apps Script methods
+   */
+  function callApi(functionName, args, onSuccess, onError) {
+    if (typeof google === 'undefined' || !google.script || !google.script.run) {
+      console.warn('[Mock / Dev Mode] callApi:', functionName, args);
+      return;
+    }
+
+    const runner = google.script.run
+      .withSuccessHandler(function(res) {
+        if (!res) {
+          if (onError) onError({ message: 'Empty response received from server.' });
+          return;
+        }
+        if (res.success) {
+          if (onSuccess) onSuccess(res.data);
+        } else {
+          if (onError) onError(res.error || { message: 'Server operation failed.' });
+          else showToastError(res.error);
+        }
+      })
+      .withFailureHandler(function(err) {
+        if (onError) onError(err);
+        else showToastError(err);
+      });
+
+    if (runner[functionName]) {
+      runner[functionName].apply(runner, args || []);
+    } else {
+      console.error('Apps Script method not found:', functionName);
+    }
+  }
+
+  function showToast(message, type) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    let icon = '✓';
+    if (type === 'error') {
+      toast.style.background = '#EF4444';
+      icon = '✕';
+    } else if (type === 'warning') {
+      toast.style.background = '#F59E0B';
+      icon = '⚠️';
+    } else {
+      toast.style.background = '#0F172A';
+    }
+
+    toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+    container.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(10px)';
+      toast.style.transition = 'all 0.3s ease';
+      setTimeout(() => toast.remove(), 300);
+    }, 4000);
+  }
+
+  function showToastError(err) {
+    const msg = (err && err.message) ? err.message : String(err || 'An error occurred.');
+    showToast(msg, 'error');
+  }
+
+  function newRequestId() {
+    return 'req_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now();
+  }
+
+  function navigateTo(moduleName) {
+    const target = moduleName || 'dashboard';
+    window.location.hash = target;
+  }
+
+  function handleRoute() {
+    const hash = window.location.hash.replace('#', '') || 'dashboard';
+    App.currentModule = hash;
+
+    // Update active nav state in sidebar
+    document.querySelectorAll('.nav-item').forEach(el => {
+      const href = el.getAttribute('href');
+      el.classList.toggle('active', href === '#' + hash);
+    });
+
+    // Hide all modules, show target module
+    document.querySelectorAll('.module-container').forEach(el => {
+      el.style.display = 'none';
+    });
+
+    const targetModule = document.getElementById('module-' + hash);
+    if (targetModule) {
+      targetModule.style.display = 'block';
+      loadModuleData(hash);
+    } else {
+      console.warn('Module container not found for hash:', hash);
+      const dash = document.getElementById('module-dashboard');
+      if (dash) dash.style.display = 'block';
+    }
+  }
+
+  window.addEventListener('hashchange', handleRoute);
+
+  function loadModuleData(moduleName) {
+    const fnName = 'loadModule_' + moduleName;
+    if (typeof window[fnName] === 'function') {
+      window[fnName]();
+    }
+  }
+
+  function initApp() {
+    callApi('getInitialAppData', [], function(data) {
+      App.user = data.user;
+      App.nav = data.nav;
+      App.orgName = data.orgName;
+      App.currency = data.currency;
+      App.punchStatus = data.punchStatus;
+
+      // Update User in Topbar & Sidebar
+      document.getElementById('topbar-user-name').textContent = data.user.fullName;
+      document.getElementById('topbar-user-role').textContent = data.user.role + ' • ' + (data.user.department || '');
+      document.getElementById('sidebar-org-name').textContent = data.orgName;
+
+      const avatar = document.getElementById('topbar-avatar');
+      if (data.user.photoUrl) {
+        avatar.innerHTML = `<img src="${data.user.photoUrl}" alt="${data.user.fullName}">`;
+      } else {
+        avatar.textContent = data.user.fullName.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+      }
+
+      updatePunchButtonUI(data.punchStatus.isPunchedIn, data.punchStatus.todayRecord);
+      renderSidebarNav(data.nav);
+      renderIconsInDOM();
+      handleRoute();
+    }, showToastError);
+  }
+
+  document.addEventListener('DOMContentLoaded', initApp);
+</script>

@@ -1,0 +1,133 @@
+<div id="module-profile" class="module-container" style="display:none;">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">My Profile & Preferences</h1>
+      <p class="page-subtitle">Personal information, emergency contacts, bank details, and attendance PIN.</p>
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:24px;">
+    <!-- Card 1: Personal Info -->
+    <div class="card">
+      <h3 class="card-title" style="margin-bottom:16px;">Personal Information</h3>
+      <form onsubmit="event.preventDefault(); savePersonalProfile();">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" id="prof-name" class="form-control" disabled>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Work Email</label>
+          <input type="email" id="prof-email" class="form-control" disabled>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Phone Number</label>
+            <input type="tel" id="prof-phone" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Blood Group</label>
+            <input type="text" id="prof-blood" class="form-control" placeholder="O+, B+, A+">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Emergency Contact (Name & Phone)</label>
+          <input type="text" id="prof-emergency" class="form-control" placeholder="Spouse / Parent: 9876543210">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Residential Address</label>
+          <textarea id="prof-address" class="form-control"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Save Personal Details</button>
+      </form>
+    </div>
+
+    <!-- Card 2: Bank & Security Preferences -->
+    <div style="display:flex; flex-direction:column; gap:24px;">
+      <!-- Bank Details -->
+      <div class="card">
+        <h3 class="card-title" style="margin-bottom:16px;">Payroll Bank Account</h3>
+        <form onsubmit="event.preventDefault(); saveBankDetails();">
+          <div class="form-group">
+            <label class="form-label">Bank Account Number</label>
+            <input type="text" id="prof-bank-acc" class="form-control" placeholder="Enter full account number">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Bank IFSC Code</label>
+            <input type="text" id="prof-bank-ifsc" class="form-control" placeholder="HDFC0001234">
+          </div>
+          <button type="submit" class="btn btn-secondary btn-sm">Update Bank Details</button>
+        </form>
+      </div>
+
+      <!-- Kiosk Attendance PIN -->
+      <div class="card">
+        <h3 class="card-title" style="margin-bottom:16px;">Kiosk Attendance PIN</h3>
+        <p style="font-size:12.5px; color:var(--sd-text-muted); margin-bottom:14px;">
+          Set a secure 4 to 6 digit PIN to check in via shared front-desk kiosks or personal ID entry.
+        </p>
+        <form onsubmit="event.preventDefault(); saveAttendancePin();">
+          <div class="form-group">
+            <label class="form-label">New PIN (4-6 digits)</label>
+            <input type="password" id="prof-pin" class="form-control" maxlength="6" placeholder="••••">
+          </div>
+          <button type="submit" class="btn btn-secondary btn-sm">Update Attendance PIN</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function loadModule_profile() {
+  callApi('Api_Profile_get', [], function(res) {
+    if (!res) return;
+    const p = res.profile;
+    document.getElementById('prof-name').value = p.fullName || '';
+    document.getElementById('prof-email').value = p.email || '';
+    document.getElementById('prof-phone').value = p.phone || '';
+    document.getElementById('prof-blood').value = p.bloodGroup || '';
+    document.getElementById('prof-emergency').value = p.emergencyContact || '';
+    document.getElementById('prof-address').value = p.address || '';
+
+    if (res.bank) {
+      document.getElementById('prof-bank-acc').value = res.bank.accountMasked || '';
+      document.getElementById('prof-bank-ifsc').value = res.bank.ifsc || '';
+    }
+  }, showToastError);
+}
+
+function savePersonalProfile() {
+  const payload = {
+    phone: document.getElementById('prof-phone').value,
+    bloodGroup: document.getElementById('prof-blood').value,
+    emergencyContact: document.getElementById('prof-emergency').value,
+    address: document.getElementById('prof-address').value
+  };
+
+  callApi('Api_Profile_updatePersonal', [payload], function() {
+    showToast('Personal details updated ✓', 'success');
+  }, showToastError);
+}
+
+function saveBankDetails() {
+  const acc = document.getElementById('prof-bank-acc').value;
+  const ifsc = document.getElementById('prof-bank-ifsc').value;
+
+  callApi('Api_Profile_updateBank', [acc, ifsc], function() {
+    showToast('Bank details submitted for verification ✓', 'success');
+  }, showToastError);
+}
+
+function saveAttendancePin() {
+  const pin = document.getElementById('prof-pin').value;
+  if (!pin || pin.length < 4) {
+    showToast('PIN must be at least 4 digits.', 'warning');
+    return;
+  }
+
+  callApi('Api_Profile_updatePin', [pin], function() {
+    showToast('Attendance PIN updated ✓', 'success');
+    document.getElementById('prof-pin').value = '';
+  }, showToastError);
+}
+</script>

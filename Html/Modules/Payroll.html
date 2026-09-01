@@ -1,0 +1,187 @@
+<div id="module-payroll" class="module-container" style="display:none;">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Payroll & Salary Slips</h1>
+      <p class="page-subtitle">Monthly salary disbursements, tax deductions, and official payslips.</p>
+    </div>
+  </div>
+
+  <!-- Sub Tabs -->
+  <div style="display:flex; gap:16px; margin-bottom:20px; border-bottom:1px solid var(--sd-border); padding-bottom:12px;">
+    <button class="btn btn-secondary btn-sm active-tab" id="tab-pay-my" onclick="switchPayrollTab('my')">My Salary Slips</button>
+    <button class="btn btn-secondary btn-sm" id="tab-pay-process" onclick="switchPayrollTab('process')" style="display:none;">Process Monthly Batch</button>
+  </div>
+
+  <!-- Section: My Payslips -->
+  <div id="pay-my-container" class="card">
+    <div class="card-header">
+      <h3 class="card-title">My Payslip Archive</h3>
+    </div>
+    <div class="table-container" style="border:none; box-shadow:none;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Period</th>
+            <th>Gross Salary</th>
+            <th>Deductions</th>
+            <th>Net Take-Home</th>
+            <th>Status</th>
+            <th style="text-align:right;">Payslip PDF</th>
+          </tr>
+        </thead>
+        <tbody id="pay-my-tbody">
+          <!-- Populated via JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Section: Process Batch (Admin/HR) -->
+  <div id="pay-process-container" style="display:none;">
+    <div class="card" style="margin-bottom:20px;">
+      <h3 class="card-title" style="margin-bottom:14px;">Generate Monthly Payroll Batch</h3>
+      <div style="display:flex; gap:12px; align-items:center;">
+        <select id="pay-batch-month" class="filter-select">
+          <option value="1">January</option>
+          <option value="2">February</option>
+          <option value="3">March</option>
+          <option value="4">April</option>
+          <option value="5">May</option>
+          <option value="6">June</option>
+          <option value="7">July</option>
+          <option value="8">August</option>
+          <option value="9">September</option>
+          <option value="10">October</option>
+          <option value="11">November</option>
+          <option value="12">December</option>
+        </select>
+        <select id="pay-batch-year" class="filter-select">
+          <option value="2026">2026</option>
+          <option value="2025">2025</option>
+        </select>
+        <button class="btn btn-primary" onclick="generatePayrollDrafts()">Run Batch Calculation</button>
+      </div>
+    </div>
+
+    <!-- Batch Preview Table -->
+    <div class="card" id="pay-drafts-card" style="display:none;">
+      <div class="card-header">
+        <h3 class="card-title">Calculated Salary Drafts</h3>
+        <button class="btn btn-primary btn-sm" onclick="publishPayrollBatch()">Publish & Email Payslips</button>
+      </div>
+      <div class="table-container" style="border:none; box-shadow:none;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Basic</th>
+              <th>HRA</th>
+              <th>Gross</th>
+              <th>Loss of Pay (LOP)</th>
+              <th>Net Pay</th>
+            </tr>
+          </thead>
+          <tbody id="pay-drafts-tbody">
+            <!-- Populated via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let payrollData = null;
+let currentDrafts = [];
+
+function loadModule_payroll() {
+  const user = App.user;
+  if (user && (user.role === 'admin' || user.role === 'hr')) {
+    const tab = document.getElementById('tab-pay-process');
+    if (tab) tab.style.display = 'inline-flex';
+  }
+
+  const d = new Date();
+  const mSelect = document.getElementById('pay-batch-month');
+  if (mSelect && !mSelect.value) mSelect.value = String(d.getMonth() + 1);
+
+  callApi('Api_Payroll_getMy', [], function(res) {
+    payrollData = res;
+    renderMyPayslips(res.myList || []);
+  }, showToastError);
+}
+
+function renderMyPayslips(list) {
+  const tbody = document.getElementById('pay-my-tbody');
+  if (!tbody) return;
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--sd-text-muted);">No payslips generated yet.</td></tr>`;
+    return;
+  }
+
+  const monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  tbody.innerHTML = list.map(p => `
+    <tr>
+      <td><strong>${monthNames[p.month]} ${p.year}</strong></td>
+      <td>₹${p.grossPay.toLocaleString('en-IN')}</td>
+      <td>₹${(p.grossPay - p.netPay).toLocaleString('en-IN')}</td>
+      <td><strong style="color:var(--sd-success);">₹${p.netPay.toLocaleString('en-IN')}</strong></td>
+      <td><span class="pill pill-approved">${p.status}</span></td>
+      <td style="text-align:right;">
+        ${p.payslipUrl ? `
+          <a href="${p.payslipUrl}" target="_blank" class="btn btn-primary btn-sm">Download PDF</a>
+        ` : '—'}
+      </td>
+    </tr>
+  `).join('');
+}
+
+function generatePayrollDrafts() {
+  const month = document.getElementById('pay-batch-month').value;
+  const year = document.getElementById('pay-batch-year').value;
+
+  showToast('Calculating monthly salary & LOP deductions...', 'info');
+  callApi('Api_Payroll_generateDraft', [month, year], function(drafts) {
+    currentDrafts = drafts || [];
+    document.getElementById('pay-drafts-card').style.display = 'block';
+    const tbody = document.getElementById('pay-drafts-tbody');
+    
+    tbody.innerHTML = currentDrafts.map(d => {
+      const ded = d.deductions || {};
+      return `
+        <tr>
+          <td><strong>${d.employeeName}</strong> <code>(${d.empId})</code></td>
+          <td>₹${d.basic.toLocaleString('en-IN')}</td>
+          <td>₹${d.hra.toLocaleString('en-IN')}</td>
+          <td>₹${d.grossPay.toLocaleString('en-IN')}</td>
+          <td><span style="color:var(--sd-danger);">₹${ded.lop || 0} (${ded.absentDays || 0}d)</span></td>
+          <td><strong style="color:var(--sd-success);">₹${d.netPay.toLocaleString('en-IN')}</strong></td>
+        </tr>
+      `;
+    }).join('');
+    showToast(`Drafts calculated for ${currentDrafts.length} employees ✓`, 'success');
+  }, showToastError);
+}
+
+function publishPayrollBatch() {
+  if (!confirm(`Are you sure you want to publish payroll and email PDF payslips to ${currentDrafts.length} employees?`)) return;
+
+  showToast('Generating official PDF payslips & dispatching emails...', 'info');
+  callApi('Api_Payroll_publish', [currentDrafts], function(res) {
+    showToast(`Payroll published! Generated ${res.publishedCount} payslips ✓`, 'success');
+    document.getElementById('pay-drafts-card').style.display = 'none';
+    loadModule_payroll();
+    switchPayrollTab('my');
+  }, showToastError);
+}
+
+function switchPayrollTab(tab) {
+  document.getElementById('tab-pay-my').classList.toggle('active-tab', tab === 'my');
+  document.getElementById('tab-pay-process').classList.toggle('active-tab', tab === 'process');
+
+  document.getElementById('pay-my-container').style.display = tab === 'my' ? 'block' : 'none';
+  document.getElementById('pay-process-container').style.display = tab === 'process' ? 'block' : 'none';
+}
+</script>

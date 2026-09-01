@@ -1,0 +1,260 @@
+<div id="module-attendance" class="module-container" style="display:none;">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Attendance & Time Tracking</h1>
+      <p class="page-subtitle">Daily clock-in logs, worked hours, team monitoring, and regularization requests.</p>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <select id="att-year-picker" class="filter-select" onchange="loadAttendanceData()">
+        <option value="2026">2026</option>
+        <option value="2025">2025</option>
+      </select>
+      <select id="att-month-picker" class="filter-select" onchange="loadAttendanceData()">
+        <option value="1">January</option>
+        <option value="2">February</option>
+        <option value="3">March</option>
+        <option value="4">April</option>
+        <option value="5">May</option>
+        <option value="6">June</option>
+        <option value="7">July</option>
+        <option value="8">August</option>
+        <option value="9">September</option>
+        <option value="10">October</option>
+        <option value="11">November</option>
+        <option value="12">December</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Sub-Tabs: My Attendance vs Team Attendance -->
+  <div style="display:flex; gap:16px; margin-bottom:20px; border-bottom:1px solid var(--sd-border); padding-bottom:12px;">
+    <button class="btn btn-secondary btn-sm active-tab" id="tab-att-my" onclick="switchAttTab('my')">My Timesheet</button>
+    <button class="btn btn-secondary btn-sm" id="tab-att-team" onclick="switchAttTab('team')" style="display:none;">Team Today</button>
+  </div>
+
+  <!-- Section: My Timesheet -->
+  <div id="att-my-container">
+    <!-- Quick Metric Cards -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:24px;">
+      <div class="card" style="padding:18px;">
+        <span style="font-size:12px; color:var(--sd-text-muted); text-transform:uppercase; font-weight:600;">Present Days</span>
+        <h3 style="font-size:24px; font-weight:700; color:var(--sd-success); margin-top:4px;" id="metric-att-present">0</h3>
+      </div>
+      <div class="card" style="padding:18px;">
+        <span style="font-size:12px; color:var(--sd-text-muted); text-transform:uppercase; font-weight:600;">Half Days</span>
+        <h3 style="font-size:24px; font-weight:700; color:var(--sd-accent); margin-top:4px;" id="metric-att-halfday">0</h3>
+      </div>
+      <div class="card" style="padding:18px;">
+        <span style="font-size:12px; color:var(--sd-text-muted); text-transform:uppercase; font-weight:600;">Absent</span>
+        <h3 style="font-size:24px; font-weight:700; color:var(--sd-danger); margin-top:4px;" id="metric-att-absent">0</h3>
+      </div>
+      <div class="card" style="padding:18px;">
+        <span style="font-size:12px; color:var(--sd-text-muted); text-transform:uppercase; font-weight:600;">Total Hours</span>
+        <h3 style="font-size:24px; font-weight:700; color:var(--sd-primary); margin-top:4px;" id="metric-att-hours">0h</h3>
+      </div>
+    </div>
+
+    <!-- Calendar Month View -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Monthly Attendance Grid</h3>
+        <div style="display:flex; align-items:center; gap:12px; font-size:12px;">
+          <span style="display:flex; align-items:center; gap:4px;"><span style="width:8px; height:8px; background:var(--sd-success); border-radius:50%;"></span> Present</span>
+          <span style="display:flex; align-items:center; gap:4px;"><span style="width:8px; height:8px; background:var(--sd-accent); border-radius:50%;"></span> Half-Day</span>
+          <span style="display:flex; align-items:center; gap:4px;"><span style="width:8px; height:8px; background:var(--sd-danger); border-radius:50%;"></span> Absent</span>
+          <span style="display:flex; align-items:center; gap:4px;"><span style="width:8px; height:8px; background:#9333EA; border-radius:50%;"></span> Holiday</span>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:8px; text-align:center; font-weight:600; font-size:12px; color:var(--sd-text-muted); margin-bottom:8px;">
+        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+      </div>
+      <div id="att-calendar-grid" style="display:grid; grid-template-columns:repeat(7, 1fr); gap:8px;">
+        <!-- Days rendered via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Section: Team Today -->
+  <div id="att-team-container" style="display:none;" class="card">
+    <div class="card-header">
+      <h3 class="card-title">Team Attendance Status (Today)</h3>
+    </div>
+    <div class="table-container" style="border:none; box-shadow:none;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Department</th>
+            <th>Status</th>
+            <th>Check In</th>
+            <th>Check Out</th>
+            <th>Worked Hours</th>
+          </tr>
+        </thead>
+        <tbody id="att-team-table-tbody">
+          <!-- Populated via JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+let myAttendanceData = null;
+
+function loadModule_attendance() {
+  const d = new Date();
+  const ySelect = document.getElementById('att-year-picker');
+  const mSelect = document.getElementById('att-month-picker');
+  if (ySelect && !ySelect.value) ySelect.value = String(d.getFullYear());
+  if (mSelect && !mSelect.value) mSelect.value = String(d.getMonth() + 1);
+
+  const user = App.user;
+  if (user && (user.role === 'manager' || user.role === 'hr' || user.role === 'admin')) {
+    const teamTab = document.getElementById('tab-att-team');
+    if (teamTab) teamTab.style.display = 'inline-flex';
+  }
+
+  loadAttendanceData();
+}
+
+function loadAttendanceData() {
+  const year = Number(document.getElementById('att-year-picker')?.value) || new Date().getFullYear();
+  const month = Number(document.getElementById('att-month-picker')?.value) || (new Date().getMonth() + 1);
+
+  callApi('Api_Attendance_getMy', [year, month], function(res) {
+    myAttendanceData = res;
+    if (res && res.stats) {
+      document.getElementById('metric-att-present').textContent = res.stats.presentCount;
+      document.getElementById('metric-att-halfday').textContent = res.stats.halfDayCount;
+      document.getElementById('metric-att-absent').textContent = res.stats.absentCount;
+      document.getElementById('metric-att-hours').textContent = res.stats.totalHours + 'h';
+    }
+    renderAttendanceCalendar(year, month, res.records || []);
+  }, showToastError);
+}
+
+function renderAttendanceCalendar(year, month, records) {
+  const mount = document.getElementById('att-calendar-grid');
+  if (!mount) return;
+
+  const firstDay = new Date(year, month - 1, 1).getDay();
+  const totalDays = new Date(year, month, 0).getDate();
+  const recordMap = {};
+  records.forEach(r => {
+    recordMap[r.date] = r;
+  });
+
+  let html = '';
+  // Empty offset days
+  for (let i = 0; i < firstDay; i++) {
+    html += `<div style="height:80px; background:var(--sd-surface-subtle); border-radius:8px; opacity:0.4;"></div>`;
+  }
+
+  // Days of month
+  for (let d = 1; d <= totalDays; d++) {
+    const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const rec = recordMap[dateStr];
+    const dayOfWeek = new Date(year, month - 1, d).getDay();
+    const isWknd = (dayOfWeek === 0 || dayOfWeek === 6);
+
+    let statusClass = isWknd ? 'pill-weekend' : 'pill-absent';
+    let statusLabel = isWknd ? 'Weekend' : 'Absent';
+    let hoursText = '';
+
+    if (rec) {
+      statusLabel = rec.status;
+      if (rec.status === 'Present') statusClass = 'pill-present';
+      else if (rec.status === 'Half-Day') statusClass = 'pill-halfday';
+      else if (rec.status === 'On-Leave') statusClass = 'pill-leave';
+      else if (rec.status === 'Holiday') statusClass = 'pill-holiday';
+
+      if (rec.workedHours) hoursText = `${rec.workedHours}h`;
+    }
+
+    html += `
+      <div style="min-height:80px; background:var(--sd-surface); border:1px solid var(--sd-border); border-radius:8px; padding:8px; display:flex; flex-direction:column; justify-content:space-between; cursor:pointer;" onclick="openDayDetail('${dateStr}')">
+        <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700;">
+          <span>${d}</span>
+          <span style="font-size:10px; color:var(--sd-text-muted);">${hoursText}</span>
+        </div>
+        <div style="margin-top:6px;">
+          <span class="pill ${statusClass}" style="font-size:9.5px; padding:1px 6px;">${statusLabel}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  mount.innerHTML = html;
+}
+
+function openDayDetail(dateStr) {
+  const rec = myAttendanceData?.records?.find(r => r.date === dateStr);
+  const bodyHtml = `
+    <div style="padding:10px 0;">
+      <p style="font-size:14px; margin-bottom:12px;"><strong>Date:</strong> ${dateStr}</p>
+      <p style="font-size:14px; margin-bottom:8px;"><strong>Status:</strong> <span class="pill pill-${(rec?.status || 'absent').toLowerCase()}">${rec?.status || 'No Punch'}</span></p>
+      <p style="font-size:14px; margin-bottom:8px;"><strong>Punch In:</strong> ${rec?.punchInTime ? new Date(rec.punchInTime).toLocaleTimeString() : '—'}</p>
+      <p style="font-size:14px; margin-bottom:8px;"><strong>Punch Out:</strong> ${rec?.punchOutTime ? new Date(rec.punchOutTime).toLocaleTimeString() : '—'}</p>
+      <p style="font-size:14px; margin-bottom:16px;"><strong>Worked Hours:</strong> ${rec?.workedHours || 0} hrs</p>
+
+      ${(!rec || rec.status === 'Absent' || rec.status === 'Half-Day') ? `
+        <div style="margin-top:16px; border-top:1px solid var(--sd-border); padding-top:14px;">
+          <label class="form-label">Missed punch? Request Regularization</label>
+          <textarea id="att-reg-reason" class="form-control" placeholder="Explain reason for missing clock-in/out..."></textarea>
+        </div>
+      ` : ''}
+    </div>
+  `;
+
+  const showRegAction = (!rec || rec.status === 'Absent' || rec.status === 'Half-Day');
+  showAppModal(`Timesheet Entry: ${dateStr}`, bodyHtml, showRegAction ? 'Submit Regularization' : null, function() {
+    const reason = document.getElementById('att-reg-reason')?.value;
+    if (!reason) {
+      showToast('Please provide a reason.', 'warning');
+      return;
+    }
+    callApi('Api_Attendance_requestRegularization', [rec?.recordId || dateStr, reason], function() {
+      closeAppModal();
+      showToast('Regularization request submitted to your manager ✓', 'success');
+      loadAttendanceData();
+    }, showToastError);
+  });
+}
+
+function switchAttTab(tab) {
+  const isMy = tab === 'my';
+  document.getElementById('tab-att-my').classList.toggle('active-tab', isMy);
+  document.getElementById('tab-att-team').classList.toggle('active-tab', !isMy);
+  document.getElementById('att-my-container').style.display = isMy ? 'block' : 'none';
+  document.getElementById('att-team-container').style.display = !isMy ? 'block' : 'none';
+
+  if (!isMy) {
+    loadTeamAttendance();
+  }
+}
+
+function loadTeamAttendance() {
+  callApi('Api_Attendance_getTeam', [], function(teamList) {
+    const tbody = document.getElementById('att-team-table-tbody');
+    if (!tbody) return;
+
+    if (!teamList || !teamList.length) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--sd-text-muted);">No direct reports found.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = teamList.map(m => `
+      <tr>
+        <td><strong>${m.fullName}</strong> <code style="font-size:11px;">(${m.empId})</code></td>
+        <td>${m.department || '—'}</td>
+        <td><span class="pill pill-${(m.attendance.status || 'absent').toLowerCase()}">${m.attendance.status || 'Absent'}</span></td>
+        <td>${m.attendance.punchInTime ? new Date(m.attendance.punchInTime).toLocaleTimeString() : '—'}</td>
+        <td>${m.attendance.punchOutTime ? new Date(m.attendance.punchOutTime).toLocaleTimeString() : '—'}</td>
+        <td><strong>${m.attendance.workedHours || 0} hrs</strong></td>
+      </tr>
+    `).join('');
+  }, showToastError);
+}
+</script>

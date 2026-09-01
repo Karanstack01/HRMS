@@ -1,0 +1,55 @@
+<!-- Global Modal Container -->
+<div id="global-modal-backdrop" class="modal-backdrop" onclick="handleBackdropClick(event)">
+  <div class="modal-container" id="global-modal-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--sd-border);">
+      <h3 id="modal-title" style="font-size: 17px; font-weight: 700;">Dialog</h3>
+      <button class="btn-icon" onclick="closeAppModal()" style="width: 32px; height: 32px;">
+        <span class="icon-slot" data-icon="x"></span>
+      </button>
+    </div>
+    <div id="modal-body" style="padding: 24px;">
+      <!-- Dynamic Form / Content -->
+    </div>
+    <div id="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--sd-border); display: flex; justify-content: flex-end; gap: 12px; background: var(--sd-surface-subtle); border-radius: 0 0 var(--sd-radius-xl) var(--sd-radius-xl);">
+      <button class="btn btn-secondary" onclick="closeAppModal()">Cancel</button>
+      <button class="btn btn-primary" id="modal-confirm-btn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let modalConfirmCallback = null;
+
+  function showAppModal(title, bodyHtml, confirmText, onConfirm) {
+    document.getElementById('modal-title').textContent = title || 'Action';
+    document.getElementById('modal-body').innerHTML = bodyHtml || '';
+    const confirmBtn = document.getElementById('modal-confirm-btn');
+
+    if (confirmText) {
+      confirmBtn.textContent = confirmText;
+      confirmBtn.style.display = 'inline-flex';
+      modalConfirmCallback = onConfirm;
+      confirmBtn.onclick = function() {
+        if (modalConfirmCallback) modalConfirmCallback();
+      };
+    } else {
+      confirmBtn.style.display = 'none';
+    }
+
+    const backdrop = document.getElementById('global-modal-backdrop');
+    backdrop.classList.add('active');
+    renderIconsInDOM(backdrop);
+  }
+
+  function closeAppModal() {
+    const backdrop = document.getElementById('global-modal-backdrop');
+    backdrop.classList.remove('active');
+    modalConfirmCallback = null;
+  }
+
+  function handleBackdropClick(e) {
+    if (e.target.id === 'global-modal-backdrop') {
+      closeAppModal();
+    }
+  }
+</script>

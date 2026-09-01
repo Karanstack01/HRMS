@@ -1,0 +1,152 @@
+<div id="module-holidays" class="module-container" style="display:none;">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Company Holidays Calendar</h1>
+      <p class="page-subtitle">Official public holidays, regional festivals, and company non-working days.</p>
+    </div>
+    <div>
+      <button class="btn btn-primary btn-sm" id="btn-add-holiday" onclick="openAddHolidayModal()" style="display:none;">
+        <span class="icon-slot" data-icon="plus"></span>
+        <span>Add Holiday</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:24px;">
+    <div class="card-header">
+      <h3 class="card-title">Year 2026 Holiday Schedule</h3>
+    </div>
+    <div class="table-container" style="border:none; box-shadow:none;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Holiday Name</th>
+            <th>Category</th>
+            <th>Applicable Locations</th>
+            <th>Description</th>
+            <th style="text-align:right;" class="admin-only-col">Action</th>
+          </tr>
+        </thead>
+        <tbody id="holidays-table-tbody">
+          <!-- Populated via JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+let holidaysCache = [];
+
+function loadModule_holidays() {
+  const user = App.user;
+  if (user && (user.role === 'admin' || user.role === 'hr')) {
+    document.getElementById('btn-add-holiday').style.display = 'inline-flex';
+  }
+
+  callApi('Api_Holidays_list', [], function(list) {
+    holidaysCache = list || [];
+    renderHolidaysTable(holidaysCache);
+  }, showToastError);
+}
+
+function renderHolidaysTable(list) {
+  const tbody = document.getElementById('holidays-table-tbody');
+  if (!tbody) return;
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--sd-text-muted);">No holidays configured for this year.</td></tr>`;
+    return;
+  }
+
+  const isPrivileged = App.user && (App.user.role === 'admin' || App.user.role === 'hr');
+
+  tbody.innerHTML = list.map(h => {
+    const d = new Date(h.date);
+    const dayName = d.toLocaleDateString('en-US', { weekday: 'long' });
+    return `
+      <tr>
+        <td>
+          <strong>${h.date}</strong>
+          <div style="font-size:11px; color:var(--sd-text-muted);">${dayName}</div>
+        </td>
+        <td><strong>${h.name}</strong></td>
+        <td><span class="pill pill-${h.type === 'Festival' ? 'warning' : 'holiday'}">${h.type}</span></td>
+        <td><code>${h.applicableLocations}</code></td>
+        <td><span style="font-size:12.5px; color:var(--sd-text-secondary);">${h.description || '—'}</span></td>
+        <td style="text-align:right;">
+          ${isPrivileged ? `
+            <button class="btn btn-secondary btn-sm" onclick="deleteHoliday('${h.holidayId}')">Delete</button>
+          ` : '—'}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function openAddHolidayModal() {
+  const bodyHtml = `
+    <form id="add-holiday-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Date *</label>
+          <input type="date" id="hol-date" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Holiday Name *</label>
+          <input type="text" id="hol-name" class="form-control" placeholder="Independence Day" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select id="hol-type" class="form-control">
+            <option value="National">National Holiday</option>
+            <option value="Festival">Festival</option>
+            <option value="Restricted">Restricted Holiday</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Applicable Locations</label>
+          <input type="text" id="hol-locations" class="form-control" value="ALL" placeholder="ALL, Bangalore, Delhi">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea id="hol-desc" class="form-control" placeholder="Optional notes..."></textarea>
+      </div>
+    </form>
+  `;
+
+  showAppModal('Add Holiday to Calendar', bodyHtml, 'Add Holiday', function() {
+    const payload = {
+      date: document.getElementById('hol-date').value,
+      name: document.getElementById('hol-name').value,
+      type: document.getElementById('hol-type').value,
+      applicableLocations: document.getElementById('hol-locations').value,
+      description: document.getElementById('hol-desc').value,
+      requestId: newRequestId()
+    };
+
+    if (!payload.date || !payload.name) {
+      showToast('Date and Name are required.', 'warning');
+      return;
+    }
+
+    callApi('Api_Holidays_create', [payload], function() {
+      closeAppModal();
+      showToast('Holiday added to calendar ✓', 'success');
+      loadModule_holidays();
+    }, showToastError);
+  });
+}
+
+function deleteHoliday(holidayId) {
+  if (!confirm('Are you sure you want to delete this holiday?')) return;
+  callApi('Api_Holidays_delete', [holidayId], function() {
+    showToast('Holiday deleted', 'info');
+    loadModule_holidays();
+  }, showToastError);
+}
+</script>

@@ -1,0 +1,180 @@
+<div id="module-letters" class="module-container" style="display:none;">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Official Letters & Documents</h1>
+      <p class="page-subtitle">Request official employment certificates, experience letters, and download signed PDFs.</p>
+    </div>
+  </div>
+
+  <!-- Sub Tabs -->
+  <div style="display:flex; gap:16px; margin-bottom:20px; border-bottom:1px solid var(--sd-border); padding-bottom:12px;">
+    <button class="btn btn-secondary btn-sm active-tab" id="tab-let-req" onclick="switchLettersTab('req')">Request Document</button>
+    <button class="btn btn-secondary btn-sm" id="tab-let-my" onclick="switchLettersTab('my')">My Documents</button>
+    <button class="btn btn-secondary btn-sm" id="tab-let-admin" onclick="switchLettersTab('admin')" style="display:none;">HR Generation Queue</button>
+  </div>
+
+  <!-- Section: Request Document -->
+  <div id="let-req-container" class="card" style="max-width:580px;">
+    <h3 class="card-title" style="margin-bottom:16px;">Request an Official Certificate</h3>
+    <form onsubmit="event.preventDefault(); submitLetterRequest();">
+      <div class="form-group">
+        <label class="form-label">Document Type *</label>
+        <select id="let-type-select" class="form-control" required>
+          <option value="Employment Certificate">Employment Verification Certificate</option>
+          <option value="Salary Certificate">Salary & Compensation Certificate</option>
+          <option value="Experience Certificate">Experience Certificate</option>
+          <option value="Relieving Letter">Relieving Letter & Service Record</option>
+        </select>
+      </div>
+      <p style="font-size:12.5px; color:var(--sd-text-secondary); margin-bottom:18px; line-height:1.5;">
+        Upon submission, the HR department will review and generate the signed official document with reference numbering and email a copy directly to you.
+      </p>
+      <button type="submit" class="btn btn-primary" id="btn-submit-let">Submit Request</button>
+    </form>
+  </div>
+
+  <!-- Section: My Documents -->
+  <div id="let-my-container" class="card" style="display:none;">
+    <div class="card-header">
+      <h3 class="card-title">My Official Documents</h3>
+    </div>
+    <div class="table-container" style="border:none; box-shadow:none;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Document Type</th>
+            <th>Requested On</th>
+            <th>Status</th>
+            <th>Ref Number</th>
+            <th style="text-align:right;">Download PDF</th>
+          </tr>
+        </thead>
+        <tbody id="let-my-tbody">
+          <!-- Populated via JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Section: HR Generation Queue -->
+  <div id="let-admin-container" class="card" style="display:none;">
+    <div class="card-header">
+      <h3 class="card-title">Pending Document Requests</h3>
+    </div>
+    <div class="table-container" style="border:none; box-shadow:none;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Document Type</th>
+            <th>Requested Date</th>
+            <th>Status</th>
+            <th style="text-align:right;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="let-admin-tbody">
+          <!-- Populated via JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+let lettersData = null;
+
+function loadModule_letters() {
+  const user = App.user;
+  if (user && (user.role === 'admin' || user.role === 'hr')) {
+    const tab = document.getElementById('tab-let-admin');
+    if (tab) tab.style.display = 'inline-flex';
+  }
+
+  callApi('Api_Letters_getMy', [], function(res) {
+    lettersData = res;
+    renderMyLetters(res.myList || []);
+    if (res.allList && res.allList.length) {
+      renderAdminLetters(res.allList);
+    }
+  }, showToastError);
+}
+
+function renderMyLetters(list) {
+  const tbody = document.getElementById('let-my-tbody');
+  if (!tbody) return;
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--sd-text-muted);">No document requests found.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(l => `
+    <tr>
+      <td><strong>${l.type}</strong></td>
+      <td>${l.requestedOn}</td>
+      <td><span class="pill pill-${l.status === 'Generated' ? 'approved' : 'pending'}">${l.status}</span></td>
+      <td><code>${l.letterNumber || '—'}</code></td>
+      <td style="text-align:right;">
+        ${l.generatedFileUrl ? `
+          <a href="${l.generatedFileUrl}" target="_blank" class="btn btn-primary btn-sm">Download PDF</a>
+        ` : '<em>Processing</em>'}
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderAdminLetters(list) {
+  const tbody = document.getElementById('let-admin-tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = list.map(l => `
+    <tr>
+      <td><strong>${l.employeeName}</strong></td>
+      <td>${l.type}</td>
+      <td>${l.requestedOn}</td>
+      <td><span class="pill pill-${l.status === 'Generated' ? 'approved' : 'pending'}">${l.status}</span></td>
+      <td style="text-align:right;">
+        ${l.status === 'Requested' ? `
+          <button class="btn btn-primary btn-sm" onclick="generateLetterPdf('${l.letterId}')">Generate & Send PDF</button>
+        ` : (l.generatedFileUrl ? `
+          <a href="${l.generatedFileUrl}" target="_blank" class="btn btn-secondary btn-sm">View PDF</a>
+        ` : '—')}
+      </td>
+    </tr>
+  `).join('');
+}
+
+function submitLetterRequest() {
+  const type = document.getElementById('let-type-select').value;
+  const btn = document.getElementById('btn-submit-let');
+  btn.disabled = true;
+
+  callApi('Api_Letters_request', [type], function() {
+    btn.disabled = false;
+    showToast('Document request submitted to HR ✓', 'success');
+    loadModule_letters();
+    switchLettersTab('my');
+  }, function(err) {
+    btn.disabled = false;
+    showToastError(err);
+  });
+}
+
+function generateLetterPdf(letterId) {
+  showToast('Generating official PDF and dispatching email...', 'info');
+  callApi('Api_Letters_generate', [letterId], function(res) {
+    showToast(`Letter generated (${res.letterNumber}) and emailed ✓`, 'success');
+    loadModule_letters();
+  }, showToastError);
+}
+
+function switchLettersTab(tab) {
+  document.getElementById('tab-let-req').classList.toggle('active-tab', tab === 'req');
+  document.getElementById('tab-let-my').classList.toggle('active-tab', tab === 'my');
+  document.getElementById('tab-let-admin').classList.toggle('active-tab', tab === 'admin');
+
+  document.getElementById('let-req-container').style.display = tab === 'req' ? 'block' : 'none';
+  document.getElementById('let-my-container').style.display = tab === 'my' ? 'block' : 'none';
+  document.getElementById('let-admin-container').style.display = tab === 'admin' ? 'block' : 'none';
+}
+</script>

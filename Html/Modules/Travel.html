@@ -1,0 +1,205 @@
+<div id="module-travel" class="module-container" style="display:none;">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Travel & Expense Reimbursements</h1>
+      <p class="page-subtitle">Submit business trip pre-approvals, attach itemized bills, and track settlements.</p>
+    </div>
+  </div>
+
+  <!-- Sub Tabs -->
+  <div style="display:flex; gap:16px; margin-bottom:20px; border-bottom:1px solid var(--sd-border); padding-bottom:12px;">
+    <button class="btn btn-secondary btn-sm active-tab" id="tab-trv-file" onclick="switchTravelTab('file')">Submit New Claim</button>
+    <button class="btn btn-secondary btn-sm" id="tab-trv-my" onclick="switchTravelTab('my')">My Claims</button>
+    <button class="btn btn-secondary btn-sm" id="tab-trv-all" onclick="switchTravelTab('all')" style="display:none;">Team Approvals & Finance</button>
+  </div>
+
+  <!-- Section: File Claim Form -->
+  <div id="trv-file-container" class="card" style="max-width:680px;">
+    <h3 class="card-title" style="margin-bottom:16px;">File Travel or Expense Claim</h3>
+    <form id="trv-form" onsubmit="event.preventDefault(); submitTravelClaim();">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Claim Type *</label>
+          <select id="trv-type" class="form-control" required>
+            <option value="Expense Reimbursement">Expense Reimbursement</option>
+            <option value="Domestic Travel Pre-Approval">Domestic Travel Pre-Approval</option>
+            <option value="International Travel">International Travel</option>
+            <option value="Client Entertainment / Food">Client Entertainment / Food</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Total Amount (₹) *</label>
+          <input type="number" id="trv-amount" class="form-control" placeholder="4500" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">From Date</label>
+          <input type="date" id="trv-from" class="form-control" value="${new Date().toISOString().split('T')[0]}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">To Date</label>
+          <input type="date" id="trv-to" class="form-control" value="${new Date().toISOString().split('T')[0]}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Business Purpose & Details *</label>
+        <textarea id="trv-purpose" class="form-control" placeholder="Describe client visit, hotel bills, or travel details..." required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary" id="btn-submit-trv">Submit Claim</button>
+    </form>
+  </div>
+
+  <!-- Section: My Claims -->
+  <div id="trv-my-container" class="card" style="display:none;">
+    <div class="card-header">
+      <h3 class="card-title">My Expense History</h3>
+    </div>
+    <div class="table-container" style="border:none; box-shadow:none;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Purpose</th>
+            <th>Dates</th>
+            <th>Amount (₹)</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="trv-my-tbody">
+          <!-- Populated via JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Section: Approvals -->
+  <div id="trv-all-container" class="card" style="display:none;">
+    <div class="card-header">
+      <h3 class="card-title">Team Expense Queue</h3>
+    </div>
+    <div class="table-container" style="border:none; box-shadow:none;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Type</th>
+            <th>Purpose</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th style="text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="trv-all-tbody">
+          <!-- Populated via JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+let travelData = null;
+
+function loadModule_travel() {
+  const user = App.user;
+  if (user && (user.role === 'manager' || user.role === 'hr' || user.role === 'admin')) {
+    const tab = document.getElementById('tab-trv-all');
+    if (tab) tab.style.display = 'inline-flex';
+  }
+
+  callApi('Api_Travel_getMy', [], function(res) {
+    travelData = res;
+    renderMyTravel(res.myList || []);
+    if (res.allList && res.allList.length) {
+      renderAllTravel(res.allList);
+    }
+  }, showToastError);
+}
+
+function renderMyTravel(list) {
+  const tbody = document.getElementById('trv-my-tbody');
+  if (!tbody) return;
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--sd-text-muted);">No expense claims filed yet.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(t => `
+    <tr>
+      <td><strong>${t.type}</strong></td>
+      <td>${t.purpose}</td>
+      <td>${t.fromDate}</td>
+      <td><strong>₹${t.estimatedCost}</strong></td>
+      <td><span class="pill pill-${t.status.toLowerCase()}">${t.status}</span></td>
+    </tr>
+  `).join('');
+}
+
+function renderAllTravel(list) {
+  const tbody = document.getElementById('trv-all-tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = list.map(t => `
+    <tr>
+      <td><strong>${t.employeeName}</strong></td>
+      <td>${t.type}</td>
+      <td>${t.purpose}</td>
+      <td><strong>₹${t.estimatedCost}</strong></td>
+      <td><span class="pill pill-${t.status.toLowerCase()}">${t.status}</span></td>
+      <td style="text-align:right;">
+        ${t.status === 'Pending' ? `
+          <button class="btn btn-primary btn-sm" onclick="actionExpense('${t.requestId}', 'APPROVE')">Approve</button>
+          <button class="btn btn-danger btn-sm" onclick="actionExpense('${t.requestId}', 'REJECT')">Reject</button>
+        ` : (t.status === 'Approved' && (App.user.role === 'admin' || App.user.role === 'hr')) ? `
+          <button class="btn btn-secondary btn-sm" onclick="actionExpense('${t.requestId}', 'REIMBURSE')">Mark Reimbursed</button>
+        ` : '—'}
+      </td>
+    </tr>
+  `).join('');
+}
+
+function submitTravelClaim() {
+  const payload = {
+    type: document.getElementById('trv-type').value,
+    estimatedCost: document.getElementById('trv-amount').value,
+    fromDate: document.getElementById('trv-from').value,
+    toDate: document.getElementById('trv-to').value,
+    purpose: document.getElementById('trv-purpose').value,
+    requestId: newRequestId()
+  };
+
+  const btn = document.getElementById('btn-submit-trv');
+  btn.disabled = true;
+
+  callApi('Api_Travel_create', [payload, []], function() {
+    btn.disabled = false;
+    showToast('Expense claim submitted for manager approval ✓', 'success');
+    document.getElementById('trv-purpose').value = '';
+    document.getElementById('trv-amount').value = '';
+    loadModule_travel();
+    switchTravelTab('my');
+  }, function(err) {
+    btn.disabled = false;
+    showToastError(err);
+  });
+}
+
+function actionExpense(requestId, action) {
+  callApi('Api_Travel_action', [requestId, action], function() {
+    showToast(`Claim updated: ${action} ✓`, 'success');
+    loadModule_travel();
+  }, showToastError);
+}
+
+function switchTravelTab(tab) {
+  document.getElementById('tab-trv-file').classList.toggle('active-tab', tab === 'file');
+  document.getElementById('tab-trv-my').classList.toggle('active-tab', tab === 'my');
+  document.getElementById('tab-trv-all').classList.toggle('active-tab', tab === 'all');
+
+  document.getElementById('trv-file-container').style.display = tab === 'file' ? 'block' : 'none';
+  document.getElementById('trv-my-container').style.display = tab === 'my' ? 'block' : 'none';
+  document.getElementById('trv-all-container').style.display = tab === 'all' ? 'block' : 'none';
+}
+</script>

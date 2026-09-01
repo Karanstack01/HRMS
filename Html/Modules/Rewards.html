@@ -1,0 +1,133 @@
+<div id="module-rewards" class="module-container" style="display:none;">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Rewards & Recognition</h1>
+      <p class="page-subtitle">Celebrating company milestones, high achievers, and peer excellence.</p>
+    </div>
+    <div>
+      <button class="btn btn-primary" id="rewards-give-btn" onclick="openGiveRewardModal()" style="display:none;">
+        <span class="icon-slot" data-icon="award"></span>
+        <span>Give Recognition</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Wall of Fame Feed -->
+  <div id="rewards-feed-mount" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:20px;">
+    <!-- Populated via JS -->
+  </div>
+</div>
+
+<script>
+let rewardsCache = [];
+
+function loadModule_rewards() {
+  const user = App.user;
+  if (user && (user.role === 'manager' || user.role === 'hr' || user.role === 'admin')) {
+    const btn = document.getElementById('rewards-give-btn');
+    if (btn) btn.style.display = 'inline-flex';
+  }
+
+  callApi('Api_Rewards_list', [], function(list) {
+    rewardsCache = list || [];
+    renderRewards();
+  }, showToastError);
+}
+
+function renderRewards() {
+  const mount = document.getElementById('rewards-feed-mount');
+  if (!mount) return;
+
+  if (!rewardsCache.length) {
+    mount.innerHTML = `<div class="card" style="grid-column:1/-1; text-align:center; padding:40px; color:var(--sd-text-muted);">No recognitions awarded yet. Be the first to recognize a colleague!</div>`;
+    return;
+  }
+
+  mount.innerHTML = rewardsCache.map(r => `
+    <div class="card" style="border-top:4px solid var(--sd-accent); display:flex; flex-direction:column; justify-content:space-between;">
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+          <span class="pill pill-warning">${r.category}</span>
+          <span style="font-size:12px; font-weight:700; color:var(--sd-accent);">+${r.points} pts</span>
+        </div>
+        <div style="display:flex; gap:12px; align-items:center; margin-bottom:14px;">
+          <div class="avatar" style="width:48px; height:48px; font-size:16px; background:#FEF3C7; color:#B45309;">
+            ${r.photoUrl ? `<img src="${r.photoUrl}">` : r.employeeName.substring(0,2).toUpperCase()}
+          </div>
+          <div>
+            <h4 style="font-size:16px; font-weight:700; color:var(--sd-text-primary);">${r.employeeName}</h4>
+            <p style="font-size:12px; color:var(--sd-text-muted);">${r.department}</p>
+          </div>
+        </div>
+        <h5 style="font-size:14px; font-weight:700; color:var(--sd-text-primary); margin-bottom:6px;">🌟 ${r.title}</h5>
+        <p style="font-size:13px; color:var(--sd-text-secondary); line-height:1.5; font-style:italic;">"${r.description || 'Excellence in teamwork and delivery'}"</p>
+      </div>
+
+      <div style="margin-top:16px; border-top:1px solid var(--sd-border-light); padding-top:10px; display:flex; justify-content:space-between; font-size:12px; color:var(--sd-text-muted);">
+        <span>Awarded by <strong>${r.giverName}</strong></span>
+        <span>${r.givenOn}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openGiveRewardModal() {
+  const employees = (typeof dirEmployeesCache !== 'undefined') ? dirEmployeesCache.filter(e => e.status === 'active') : [];
+  const bodyHtml = `
+    <form id="give-reward-form">
+      <div class="form-group">
+        <label class="form-label">Select Colleague *</label>
+        <select id="rew-emp" class="form-control" required>
+          ${employees.map(e => `<option value="${e.empId}">${e.fullName} (${e.empId} - ${e.department})</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Award Category *</label>
+          <select id="rew-cat" class="form-control">
+            <option value="Spot Award">Spot Award</option>
+            <option value="Employee of the Month">Employee of the Month</option>
+            <option value="Peer Kudos">Peer Kudos</option>
+            <option value="Innovation Champion">Innovation Champion</option>
+            <option value="Customer Delight">Customer Delight</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Points (Optional)</label>
+          <input type="number" id="rew-pts" class="form-control" value="250">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Award Title *</label>
+        <input type="text" id="rew-title" class="form-control" placeholder="e.g. Exceptional leadership during sprint release" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Citation / Message *</label>
+        <textarea id="rew-msg" class="form-control" placeholder="Describe the achievement and impact..." required></textarea>
+      </div>
+    </form>
+  `;
+
+  showAppModal('Give Employee Recognition', bodyHtml, 'Publish Award', function() {
+    const payload = {
+      empId: document.getElementById('rew-emp').value,
+      category: document.getElementById('rew-cat').value,
+      points: document.getElementById('rew-pts').value,
+      title: document.getElementById('rew-title').value,
+      description: document.getElementById('rew-msg').value,
+      requestId: newRequestId()
+    };
+
+    if (!payload.empId || !payload.title || !payload.description) {
+      showToast('Recipient, Title, and Message are required.', 'warning');
+      return;
+    }
+
+    callApi('Api_Rewards_give', [payload], function() {
+      closeAppModal();
+      showToast('Recognition published to Wall of Fame ✓', 'success');
+      loadModule_rewards();
+    }, showToastError);
+  });
+}
+</script>

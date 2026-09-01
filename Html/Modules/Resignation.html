@@ -1,0 +1,213 @@
+<div id="module-resignation" class="module-container" style="display:none;">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Separation & Offboarding</h1>
+      <p class="page-subtitle">Formal resignation workflows, exit clearance checklist, and Full & Final settlement.</p>
+    </div>
+  </div>
+
+  <!-- Sub Tabs -->
+  <div style="display:flex; gap:16px; margin-bottom:20px; border-bottom:1px solid var(--sd-border); padding-bottom:12px;">
+    <button class="btn btn-secondary btn-sm active-tab" id="tab-res-my" onclick="switchResTab('my')">My Resignation Status</button>
+    <button class="btn btn-secondary btn-sm" id="tab-res-admin" onclick="switchResTab('admin')" style="display:none;">Offboarding & Clearances</button>
+  </div>
+
+  <!-- Section: My Resignation -->
+  <div id="res-my-container">
+    <div id="res-my-mount">
+      <!-- Populated via JS -->
+    </div>
+  </div>
+
+  <!-- Section: Offboarding Clearances (HR/Admin) -->
+  <div id="res-admin-container" class="card" style="display:none;">
+    <div class="card-header">
+      <h3 class="card-title">Employee Exit Pipelines</h3>
+    </div>
+    <div class="table-container" style="border:none; box-shadow:none;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Submitted On</th>
+            <th>Last Working Day</th>
+            <th>Status</th>
+            <th>F&F Settled</th>
+            <th style="text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="res-admin-tbody">
+          <!-- Populated via JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+let resignationData = null;
+
+function loadModule_resignation() {
+  const user = App.user;
+  if (user && (user.role === 'admin' || user.role === 'hr' || user.role === 'manager')) {
+    const tab = document.getElementById('tab-res-admin');
+    if (tab) tab.style.display = 'inline-flex';
+  }
+
+  callApi('Api_Resignation_getMy', [], function(res) {
+    resignationData = res;
+    renderMyResignation(res.active);
+    if (res.allList && res.allList.length) {
+      renderAdminExits(res.allList);
+    }
+  }, showToastError);
+}
+
+function renderMyResignation(active) {
+  const mount = document.getElementById('res-my-mount');
+  if (!mount) return;
+
+  if (!active) {
+    mount.innerHTML = `
+      <div class="card" style="max-width:580px;">
+        <h3 class="card-title" style="margin-bottom:16px;">Initiate Resignation Notice</h3>
+        <form onsubmit="event.preventDefault(); submitResignation();">
+          <div class="form-group">
+            <label class="form-label">Proposed Last Working Day *</label>
+            <input type="date" id="res-lwd" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Reason for Separation *</label>
+            <textarea id="res-reason" class="form-control" placeholder="Provide context..." required></textarea>
+          </div>
+          <button type="submit" class="btn btn-danger">Submit Resignation Notice</button>
+        </form>
+      </div>
+    `;
+    const defaultDate = new Date();
+    defaultDate.setDate(defaultDate.getDate() + 60);
+    const el = document.getElementById('res-lwd');
+    if (el) el.value = defaultDate.toISOString().split('T')[0];
+  } else {
+    const checklist = (typeof active.clearanceChecklist === 'string') ? JSON.parse(active.clearanceChecklist) : (active.clearanceChecklist || {});
+    mount.innerHTML = `
+      <div class="card" style="max-width:640px; border-left:4px solid var(--sd-danger);">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+          <div>
+            <h3 class="card-title">Resignation Notice Active</h3>
+            <p style="font-size:12px; color:var(--sd-text-muted);">Submitted on ${active.submittedOn}</p>
+          </div>
+          <span class="pill pill-${active.status === 'Completed' ? 'approved' : 'pending'}">${active.status}</span>
+        </div>
+
+        <div style="background:var(--sd-surface-subtle); padding:16px; border-radius:8px; margin-bottom:20px; font-size:13px;">
+          <p style="margin-bottom:6px;"><strong>Last Working Day:</strong> ${active.lastWorkingDay}</p>
+          <p style="margin-bottom:6px;"><strong>Notice Period:</strong> ${active.noticePeriodDays} Days</p>
+          <p><strong>Reason:</strong> <em>"${active.reason}"</em></p>
+        </div>
+
+        <h4 style="font-size:14px; font-weight:700; margin-bottom:10px;">Exit Clearance Checklist</h4>
+        <div style="display:flex; flex-direction:column; gap:8px; font-size:13px;">
+          <div>${checklist.knowledgeTransfer ? '✅' : '⏳'} Knowledge Transfer Completed</div>
+          <div>${checklist.exitInterview ? '✅' : '⏳'} Exit Interview Conducted</div>
+          <div>${checklist.duesCleared ? '✅' : '⏳'} Finance & Accounts Settlement</div>
+          <div>${(checklist.assets && checklist.assets.every(a=>a.returned)) ? '✅' : '⏳'} Hardware & Asset Handover</div>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function renderAdminExits(list) {
+  const tbody = document.getElementById('res-admin-tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = list.map(r => `
+    <tr>
+      <td><strong>${r.employeeName}</strong> <code>(${r.empId})</code></td>
+      <td>${r.submittedOn}</td>
+      <td><strong>${r.lastWorkingDay}</strong></td>
+      <td><span class="pill pill-${r.status === 'Completed' ? 'approved' : 'pending'}">${r.status}</span></td>
+      <td>${r.fnfSettled ? '✅ Yes' : '⏳ Pending'}</td>
+      <td style="text-align:right;">
+        ${(r.status !== 'Completed' && (App.user.role === 'admin' || App.user.role === 'hr')) ? `
+          <button class="btn btn-primary btn-sm" onclick="openClearanceModal('${r.resignationId}')">Clearance & F&F</button>
+        ` : '—'}
+      </td>
+    </tr>
+  `).join('');
+}
+
+function submitResignation() {
+  const payload = {
+    proposedLWD: document.getElementById('res-lwd').value,
+    reason: document.getElementById('res-reason').value,
+    requestId: newRequestId()
+  };
+
+  if (!confirm('Are you sure you want to submit your resignation notice?')) return;
+
+  callApi('Api_Resignation_submit', [payload], function() {
+    showToast('Resignation notice submitted to manager & HR ✓', 'success');
+    loadModule_resignation();
+  }, showToastError);
+}
+
+function openClearanceModal(resId) {
+  const item = resignationData?.allList?.find(r => r.resignationId === resId);
+  if (!item) return;
+
+  const checklist = (typeof item.clearanceChecklist === 'string') ? JSON.parse(item.clearanceChecklist) : (item.clearanceChecklist || {});
+
+  const bodyHtml = `
+    <div style="font-size:13.5px;">
+      <p style="margin-bottom:14px;">Review offboarding checklist for <strong>${item.employeeName}</strong>:</p>
+      <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="chk-kt" ${checklist.knowledgeTransfer ? 'checked' : ''}>
+          <span>Knowledge Transfer & Handover completed</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="chk-exit" ${checklist.exitInterview ? 'checked' : ''}>
+          <span>Exit Interview Conducted</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="chk-dues" ${checklist.duesCleared ? 'checked' : ''}>
+          <span>Accounts & Final Dues Cleared</span>
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Final Relieving Date (LWD)</label>
+        <input type="date" id="exit-lwd" class="form-control" value="${item.lastWorkingDay}">
+      </div>
+    </div>
+  `;
+
+  showAppModal(`Exit Clearance: ${item.employeeName}`, bodyHtml, 'Finalize & Relieve Employee', function() {
+    const updatedChecklist = {
+      knowledgeTransfer: document.getElementById('chk-kt').checked,
+      exitInterview: document.getElementById('chk-exit').checked,
+      duesCleared: document.getElementById('chk-dues').checked,
+      assets: checklist.assets || []
+    };
+    const lwdFinal = document.getElementById('exit-lwd').value;
+
+    callApi('Api_Resignation_updateChecklist', [resId, updatedChecklist], function() {
+      callApi('Api_Resignation_finalize', [resId, lwdFinal], function() {
+        closeAppModal();
+        showToast('Offboarding completed & Relieving letter queued ✓', 'success');
+        loadModule_resignation();
+      }, showToastError);
+    }, showToastError);
+  });
+}
+
+function switchResTab(tab) {
+  document.getElementById('tab-res-my').classList.toggle('active-tab', tab === 'my');
+  document.getElementById('tab-res-admin').classList.toggle('active-tab', tab === 'admin');
+
+  document.getElementById('res-my-container').style.display = tab === 'my' ? 'block' : 'none';
+  document.getElementById('res-admin-container').style.display = tab === 'admin' ? 'block' : 'none';
+}
+</script>

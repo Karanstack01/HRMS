@@ -1,0 +1,117 @@
+<div id="topbar">
+  <!-- Search Bar -->
+  <div style="display: flex; align-items: center; gap: 10px; width: 340px;">
+    <div style="position: relative; width: 100%;">
+      <span class="icon-slot" data-icon="search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--sd-text-muted); pointer-events: none;"></span>
+      <input type="text" id="global-search-input" placeholder="Search employees, policies, letters..." class="form-control" style="padding-left: 36px; height: 38px; border-radius: 9999px; background: var(--sd-bg); font-size: 12.5px;" oninput="handleGlobalSearch(this.value)">
+    </div>
+  </div>
+
+  <!-- Actions & Profile Info -->
+  <div style="display: flex; align-items: center; gap: 16px;">
+    <!-- Live Global Punch Button -->
+    <div id="topbar-punch-container">
+      <button id="btn-quick-punch" class="btn btn-sm btn-primary" onclick="triggerQuickPunch()" style="height: 38px; border-radius: 9999px; padding: 0 16px;">
+        <span class="icon-slot" data-icon="clock"></span>
+        <span id="punch-btn-label">Clock In</span>
+      </button>
+    </div>
+
+    <!-- Live Date & Clock Display -->
+    <div style="text-align: right; font-size: 12px; line-height: 1.2; display: none;" id="topbar-clock-box">
+      <div id="topbar-time" style="font-weight: 700; color: var(--sd-text-primary); font-family: 'JetBrains Mono', monospace;">00:00:00</div>
+      <div id="topbar-date" style="color: var(--sd-text-muted); font-size: 11px;">Loading date...</div>
+    </div>
+
+    <div style="height: 24px; width: 1px; background: var(--sd-border);"></div>
+
+    <!-- Active User Profile Pill -->
+    <div style="display: flex; align-items: center; gap: 10px; cursor: pointer;" onclick="navigateTo('profile')">
+      <div class="avatar" id="topbar-avatar">
+        SD
+      </div>
+      <div style="text-align: left; line-height: 1.2;">
+        <div id="topbar-user-name" style="font-size: 13px; font-weight: 700; color: var(--sd-text-primary);">Loading...</div>
+        <div id="topbar-user-role" style="font-size: 11px; color: var(--sd-text-muted); text-transform: capitalize;">Staff</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function updateTopbarClock() {
+    const now = new Date();
+    const timeEl = document.getElementById('topbar-time');
+    const dateEl = document.getElementById('topbar-date');
+    if (timeEl) timeEl.textContent = now.toLocaleTimeString();
+    if (dateEl) dateEl.textContent = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+  setInterval(updateTopbarClock, 1000);
+  updateTopbarClock();
+
+  function updatePunchButtonUI(isPunchedIn, todayRecord) {
+    const btn = document.getElementById('btn-quick-punch');
+    const label = document.getElementById('punch-btn-label');
+    if (!btn || !label) return;
+
+    if (isPunchedIn) {
+      btn.className = 'btn btn-sm btn-danger';
+      label.textContent = 'Clock Out';
+      btn.title = todayRecord?.punchInTime ? `Punched in at ${new Date(todayRecord.punchInTime).toLocaleTimeString()}` : 'Click to clock out';
+    } else {
+      btn.className = 'btn btn-sm btn-primary';
+      label.textContent = 'Clock In';
+      btn.title = 'Click to record daily punch-in';
+    }
+  }
+
+  function triggerQuickPunch() {
+    const isPunchedIn = App.punchStatus.isPunchedIn;
+    const action = isPunchedIn ? 'OUT' : 'IN';
+    const reqId = newRequestId();
+
+    const btn = document.getElementById('btn-quick-punch');
+    btn.disabled = true;
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => executePunchCall(action, `${pos.coords.latitude},${pos.coords.longitude}`, reqId),
+        () => executePunchCall(action, 'Office Location', reqId)
+      );
+    } else {
+      executePunchCall(action, 'Web Browser', reqId);
+    }
+  }
+
+  function executePunchCall(action, geo, reqId) {
+    callApi('Api_Attendance_punch', [action, geo, reqId], function(res) {
+      document.getElementById('btn-quick-punch').disabled = false;
+      showToast(`Punch ${action} successfully recorded ✓`, 'success');
+      App.punchStatus.isPunchedIn = (action === 'IN');
+      App.punchStatus.todayRecord = res;
+      updatePunchButtonUI(App.punchStatus.isPunchedIn, res);
+
+      // Refresh current view if attendance or dashboard is open
+      if (App.currentModule === 'attendance' || App.currentModule === 'dashboard') {
+        loadModuleData(App.currentModule);
+      }
+    }, function(err) {
+      document.getElementById('btn-quick-punch').disabled = false;
+      showToastError(err);
+    });
+  }
+
+  function handleGlobalSearch(query) {
+    const q = (query || '').toLowerCase().trim();
+    if (!q) return;
+    // Route to directory if searching employees
+    if (App.currentModule !== 'directory') {
+      navigateTo('directory');
+    }
+    const filterInput = document.getElementById('dir-search-input');
+    if (filterInput) {
+      filterInput.value = q;
+      filterEmployeesList();
+    }
+  }
+</script>

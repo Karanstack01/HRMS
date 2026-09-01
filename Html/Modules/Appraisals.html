@@ -1,0 +1,245 @@
+<div id="module-appraisals" class="module-container" style="display:none;">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Performance & Appraisals</h1>
+      <p class="page-subtitle">Goal tracking, self-evaluations, manager reviews, and calibration.</p>
+    </div>
+  </div>
+
+  <!-- Sub Tabs: My Appraisal vs Team Reviews -->
+  <div style="display:flex; gap:16px; margin-bottom:20px; border-bottom:1px solid var(--sd-border); padding-bottom:12px;">
+    <button class="btn btn-secondary btn-sm active-tab" id="tab-app-my" onclick="switchAppraisalTab('my')">My Current Cycle</button>
+    <button class="btn btn-secondary btn-sm" id="tab-app-team" onclick="switchAppraisalTab('team')" style="display:none;">Team Reviews & Calibration</button>
+  </div>
+
+  <!-- Section: My Current Cycle -->
+  <div id="app-my-container">
+    <div id="app-my-mount">
+      <!-- Populated via JS -->
+    </div>
+  </div>
+
+  <!-- Section: Team Reviews -->
+  <div id="app-team-container" class="card" style="display:none;">
+    <div class="card-header">
+      <h3 class="card-title">Team Performance Appraisals</h3>
+    </div>
+    <div class="table-container" style="border:none; box-shadow:none;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Cycle</th>
+            <th>Stage</th>
+            <th>Self Rating</th>
+            <th>Manager Rating</th>
+            <th>Final Rating</th>
+            <th style="text-align:right;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="app-team-tbody">
+          <!-- Populated via JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+let appraisalData = null;
+
+function loadModule_appraisals() {
+  const user = App.user;
+  if (user && (user.role === 'manager' || user.role === 'hr' || user.role === 'admin')) {
+    const tab = document.getElementById('tab-app-team');
+    if (tab) tab.style.display = 'inline-flex';
+  }
+
+  callApi('Api_Appraisals_getMy', [], function(res) {
+    appraisalData = res;
+    renderMyAppraisal(res.myList || []);
+    if (res.teamList && res.teamList.length) {
+      renderTeamAppraisals(res.teamList);
+    }
+  }, showToastError);
+}
+
+function renderMyAppraisal(list) {
+  const mount = document.getElementById('app-my-mount');
+  if (!mount) return;
+
+  if (!list.length) {
+    mount.innerHTML = `<div class="card"><p style="text-align:center; padding:40px; color:var(--sd-text-muted);">No appraisal cycle active.</p></div>`;
+    return;
+  }
+
+  const cur = list[0];
+  const stages = ['Self-Pending', 'Manager-Pending', 'HR-Review', 'Completed'];
+  const curIdx = stages.indexOf(cur.status);
+
+  mount.innerHTML = `
+    <div class="card" style="margin-bottom:24px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <div>
+          <h3 style="font-size:18px; font-weight:700;">Appraisal Cycle: ${cur.cycle}</h3>
+          <p style="font-size:12px; color:var(--sd-text-muted);">Initiated on ${cur.createdOn}</p>
+        </div>
+        <span class="pill pill-${cur.status === 'Completed' ? 'approved' : 'pending'}">${cur.status}</span>
+      </div>
+
+      <!-- Stage Stepper -->
+      <div style="display:flex; justify-content:space-between; margin-bottom:28px; position:relative;">
+        <div style="text-align:center; flex:1;">
+          <div style="width:32px; height:32px; border-radius:50%; background:${curIdx >= 0 ? '#4F46E5' : '#E2E8F0'}; color:#FFF; display:inline-flex; align-items:center; justify-content:center; font-weight:700; margin-bottom:6px;">1</div>
+          <div style="font-size:12px; font-weight:600;">Self Review</div>
+        </div>
+        <div style="text-align:center; flex:1;">
+          <div style="width:32px; height:32px; border-radius:50%; background:${curIdx >= 1 ? '#4F46E5' : '#E2E8F0'}; color:#FFF; display:inline-flex; align-items:center; justify-content:center; font-weight:700; margin-bottom:6px;">2</div>
+          <div style="font-size:12px; font-weight:600;">Manager Rating</div>
+        </div>
+        <div style="text-align:center; flex:1;">
+          <div style="width:32px; height:32px; border-radius:50%; background:${curIdx >= 2 ? '#4F46E5' : '#E2E8F0'}; color:#FFF; display:inline-flex; align-items:center; justify-content:center; font-weight:700; margin-bottom:6px;">3</div>
+          <div style="font-size:12px; font-weight:600;">HR Calibration</div>
+        </div>
+        <div style="text-align:center; flex:1;">
+          <div style="width:32px; height:32px; border-radius:50%; background:${curIdx >= 3 ? '#22C55E' : '#E2E8F0'}; color:#FFF; display:inline-flex; align-items:center; justify-content:center; font-weight:700; margin-bottom:6px;">4</div>
+          <div style="font-size:12px; font-weight:600;">Completed</div>
+        </div>
+      </div>
+
+      <!-- Self Review Form -->
+      ${cur.status === 'Self-Pending' ? `
+        <div style="background:var(--sd-surface-subtle); padding:20px; border-radius:12px;">
+          <h4 style="font-size:15px; font-weight:700; margin-bottom:14px;">Submit Your Self-Evaluation</h4>
+          <div class="form-group">
+            <label class="form-label">Self Rating (1 to 5 Stars) *</label>
+            <select id="self-rating" class="form-control" style="width:180px;">
+              <option value="5">⭐⭐⭐⭐⭐ (5 - Exceptional)</option>
+              <option value="4" selected>⭐⭐⭐⭐ (4 - Exceeds Expectations)</option>
+              <option value="3">⭐⭐⭐ (3 - Meets Expectations)</option>
+              <option value="2">⭐⭐ (2 - Needs Improvement)</option>
+              <option value="1">⭐ (1 - Unsatisfactory)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Key Achievements & Goal Deliverables *</label>
+            <textarea id="self-achievements" class="form-control" placeholder="Outline your major contributions and deliverables during this cycle..." required></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="submitSelfReview('${cur.appraisalId}')">Submit to Manager</button>
+        </div>
+      ` : `
+        <div style="background:var(--sd-surface-subtle); padding:20px; border-radius:12px;">
+          <p style="font-size:14px; margin-bottom:8px;"><strong>Self Rating:</strong> ⭐ ${cur.selfRating} / 5</p>
+          ${cur.managerRating ? `<p style="font-size:14px; margin-bottom:8px;"><strong>Manager Rating:</strong> ⭐ ${cur.managerRating} / 5 (${cur.managerComments || 'Good progress'})</p>` : ''}
+          ${cur.finalRating ? `<p style="font-size:14px; font-weight:700; color:var(--sd-success); margin-bottom:8px;"><strong>Final Calibrated Rating:</strong> ⭐ ${cur.finalRating} / 5</p>` : ''}
+          <p style="font-size:13px; color:var(--sd-text-muted);">Current Stage: <em>${cur.status}</em></p>
+        </div>
+      `}
+    </div>
+  `;
+}
+
+function submitSelfReview(appraisalId) {
+  const rating = document.getElementById('self-rating')?.value;
+  const achievements = document.getElementById('self-achievements')?.value;
+
+  if (!achievements) {
+    showToast('Please describe your achievements.', 'warning');
+    return;
+  }
+
+  callApi('Api_Appraisals_submitSelf', [appraisalId, rating, achievements], function() {
+    showToast('Self review submitted to manager ✓', 'success');
+    loadModule_appraisals();
+  }, showToastError);
+}
+
+function renderTeamAppraisals(list) {
+  const tbody = document.getElementById('app-team-tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = list.map(a => `
+    <tr>
+      <td><strong>${a.employeeName}</strong> <code>(${a.empId})</code></td>
+      <td>${a.cycle}</td>
+      <td><span class="pill pill-${a.status === 'Completed' ? 'approved' : 'pending'}">${a.status}</span></td>
+      <td>${a.selfRating ? '⭐ ' + a.selfRating : '—'}</td>
+      <td>${a.managerRating ? '⭐ ' + a.managerRating : '—'}</td>
+      <td>${a.finalRating ? '⭐ ' + a.finalRating : '—'}</td>
+      <td style="text-align:right;">
+        ${(a.status === 'Manager-Pending' && App.user.role !== 'employee') ? `
+          <button class="btn btn-primary btn-sm" onclick="openManagerRatingModal('${a.appraisalId}', '${a.employeeName}')">Rate</button>
+        ` : (a.status === 'HR-Review' && (App.user.role === 'admin' || App.user.role === 'hr')) ? `
+          <button class="btn btn-secondary btn-sm" onclick="openHrCalibrateModal('${a.appraisalId}', '${a.employeeName}')">Calibrate</button>
+        ` : '—'}
+      </td>
+    </tr>
+  `).join('');
+}
+
+function openManagerRatingModal(appraisalId, empName) {
+  const bodyHtml = `
+    <div class="form-group">
+      <label class="form-label">Manager Rating (1 to 5 Stars) *</label>
+      <select id="mgr-rating" class="form-control">
+        <option value="5">5 - Exceptional</option>
+        <option value="4" selected>4 - Exceeds Expectations</option>
+        <option value="3">3 - Meets Expectations</option>
+        <option value="2">2 - Needs Improvement</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Manager Comments & Next Cycle Goals *</label>
+      <textarea id="mgr-comments" class="form-control" placeholder="Provide feedback..." required></textarea>
+    </div>
+  `;
+
+  showAppModal(`Manager Evaluation: ${empName}`, bodyHtml, 'Submit Rating', function() {
+    const rating = document.getElementById('mgr-rating')?.value;
+    const comments = document.getElementById('mgr-comments')?.value;
+    if (!comments) {
+      showToast('Comments are required.', 'warning');
+      return;
+    }
+    callApi('Api_Appraisals_submitManager', [appraisalId, rating, comments], function() {
+      closeAppModal();
+      showToast('Manager review submitted for HR review ✓', 'success');
+      loadModule_appraisals();
+    }, showToastError);
+  });
+}
+
+function openHrCalibrateModal(appraisalId, empName) {
+  const bodyHtml = `
+    <div class="form-group">
+      <label class="form-label">Final Calibrated Rating (1 to 5) *</label>
+      <select id="hr-final-rating" class="form-control">
+        <option value="5">5 - Outstanding</option>
+        <option value="4" selected>4 - Exceeds Expectations</option>
+        <option value="3">3 - Meets Expectations</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">HR / Promotion Remarks</label>
+      <textarea id="hr-remarks" class="form-control" placeholder="Optional notes for final closure..."></textarea>
+    </div>
+  `;
+
+  showAppModal(`HR Calibration: ${empName}`, bodyHtml, 'Finalize & Lock', function() {
+    const rating = document.getElementById('hr-final-rating')?.value;
+    const remarks = document.getElementById('hr-remarks')?.value;
+    callApi('Api_Appraisals_finalize', [appraisalId, rating, remarks], function() {
+      closeAppModal();
+      showToast('Appraisal cycle completed and locked ✓', 'success');
+      loadModule_appraisals();
+    }, showToastError);
+  });
+}
+
+function switchAppraisalTab(tab) {
+  document.getElementById('tab-app-my').classList.toggle('active-tab', tab === 'my');
+  document.getElementById('tab-app-team').classList.toggle('active-tab', tab === 'team');
+  document.getElementById('app-my-container').style.display = tab === 'my' ? 'block' : 'none';
+  document.getElementById('app-team-container').style.display = tab === 'team' ? 'block' : 'none';
+}
+</script>

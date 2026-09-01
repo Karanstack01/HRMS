@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StackDrove HRMS — Apply for Leave</title>
+  <?!= include('Html/Partials/Styles'); ?>
+  <style>
+    body {
+      background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%);
+      color: #F8FAFC;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .leave-card {
+      background: #FFFFFF;
+      color: #0F172A;
+      border-radius: 20px;
+      padding: 36px 32px;
+      max-width: 520px;
+      width: 100%;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+  </style>
+</head>
+<body>
+
+<div class="leave-card">
+  <div style="text-align:center; margin-bottom:24px;">
+    <div style="font-size:22px; font-weight:800; color:#0F172A;">
+      Stack<span style="color:#4F46E5;">Drove</span> HRMS
+    </div>
+    <p style="font-size:13px; color:#64748B; margin-top:2px;">Quick Leave Application</p>
+  </div>
+
+  <form id="standalone-leave-form" onsubmit="event.preventDefault(); submitStandaloneLeave();">
+    <div class="form-group">
+      <label class="form-label">Leave Type *</label>
+      <select id="std-leave-type" class="form-control" onchange="updateStdSandwichPreview()" required>
+        <option value="Casual">Casual Leave</option>
+        <option value="Sick">Sick Leave</option>
+        <option value="Earned">Earned / Privilege Leave</option>
+        <option value="Unpaid">Unpaid Leave</option>
+      </select>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">From Date *</label>
+        <input type="date" id="std-from-date" class="form-control" onchange="updateStdSandwichPreview()" required>
+      </div>
+      <div class="form-group" id="std-group-to-date">
+        <label class="form-label">To Date *</label>
+        <input type="date" id="std-to-date" class="form-control" onchange="updateStdSandwichPreview()" required>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+        <input type="checkbox" id="std-is-halfday" onchange="toggleStdHalfDay(this.checked)">
+        <span>Half-Day Request</span>
+      </label>
+    </div>
+
+    <div id="std-calc-preview" style="background:#EEF2FF; border-left:4px solid #4F46E5; padding:12px; border-radius:6px; margin-bottom:16px; font-size:12.5px; color:#1F2937; display:none;"></div>
+
+    <div class="form-group">
+      <label class="form-label">Reason for Absence *</label>
+      <textarea id="std-reason" class="form-control" placeholder="Provide context..." required></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary" id="std-submit-btn" style="width:100%;">
+      <span>Submit Leave Application</span>
+    </button>
+  </form>
+
+  <div style="margin-top:24px; border-top:1px solid #E2E8F0; padding-top:16px; text-align:center;">
+    <a href="<?!= ScriptApp.getService().getUrl() ?>" style="color:#4F46E5; font-size:13px; text-decoration:none; font-weight:600;">
+      ← Return to Main HRMS Portal
+    </a>
+  </div>
+</div>
+
+<?!= include('Html/Partials/Icons'); ?>
+<?!= include('Html/Partials/AppCore'); ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('std-from-date').value = today;
+  document.getElementById('std-to-date').value = today;
+  updateStdSandwichPreview();
+});
+
+function toggleStdHalfDay(isHalf) {
+  document.getElementById('std-group-to-date').style.display = isHalf ? 'none' : 'block';
+  if (isHalf) {
+    document.getElementById('std-to-date').value = document.getElementById('std-from-date').value;
+  }
+  updateStdSandwichPreview();
+}
+
+function updateStdSandwichPreview() {
+  const fromDate = document.getElementById('std-from-date')?.value;
+  const isHalf = document.getElementById('std-is-halfday')?.checked;
+  const toDate = isHalf ? fromDate : document.getElementById('std-to-date')?.value;
+  const type = document.getElementById('std-leave-type')?.value;
+
+  if (!fromDate || !toDate) return;
+
+  callApi('Api_Leave_previewDayCount', [fromDate, toDate, type, isHalf], function(res) {
+    const banner = document.getElementById('std-calc-preview');
+    if (banner && res && res.message) {
+      banner.textContent = res.message;
+      banner.style.display = 'block';
+    }
+  });
+}
+
+function submitStandaloneLeave() {
+  const isHalf = document.getElementById('std-is-halfday').checked;
+  const fromDate = document.getElementById('std-from-date').value;
+  const toDate = isHalf ? fromDate : document.getElementById('std-to-date').value;
+
+  const payload = {
+    leaveType: document.getElementById('std-leave-type').value,
+    fromDate: fromDate,
+    toDate: toDate,
+    isHalfDay: isHalf,
+    reason: document.getElementById('std-reason').value,
+    requestId: newRequestId()
+  };
+
+  const btn = document.getElementById('std-submit-btn');
+  btn.disabled = true;
+
+  callApi('Api_Leave_apply', [payload], function(res) {
+    showToast(`Leave application submitted for ${res.dayCount} day(s) ✓`, 'success');
+    setTimeout(() => {
+      window.location.href = '<?!= ScriptApp.getService().getUrl() ?>';
+    }, 1500);
+  }, function(err) {
+    btn.disabled = false;
+    showToastError(err);
+  });
+}
+</script>
+</body>
+</html>

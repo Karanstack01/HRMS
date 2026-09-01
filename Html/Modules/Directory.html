@@ -1,0 +1,396 @@
+<div id="module-directory" class="module-container" style="display:none;">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Employee Directory</h1>
+      <p class="page-subtitle">Search team members, browse departments, view reporting lines, and access org chart.</p>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <div style="display:flex; background:var(--sd-surface); border:1px solid var(--sd-border); border-radius:var(--sd-radius-md); overflow:hidden;">
+        <button class="btn btn-sm btn-secondary" id="btn-view-grid" onclick="switchDirectoryView('grid')" style="border-radius:0; border:none;">
+          <span class="icon-slot" data-icon="grid"></span>
+        </button>
+        <button class="btn btn-sm btn-secondary" id="btn-view-table" onclick="switchDirectoryView('table')" style="border-radius:0; border:none;">
+          <span class="icon-slot" data-icon="list"></span>
+        </button>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="openOrgChartModal()">
+        <span class="icon-slot" data-icon="users"></span>
+        <span>Org Chart</span>
+      </button>
+      <button class="btn btn-primary btn-sm" id="btn-add-employee" onclick="openAddEmployeeModal()" style="display:none;">
+        <span class="icon-slot" data-icon="plus"></span>
+        <span>Add Employee</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters & Search Bar -->
+  <div style="display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap;">
+    <div style="flex:1; min-width:240px; position:relative;">
+      <span class="icon-slot" data-icon="search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--sd-text-muted);"></span>
+      <input type="text" id="dir-search-input" class="form-control" placeholder="Search by name, email, department..." style="padding-left:36px;" oninput="filterEmployeesList()">
+    </div>
+    <select id="dir-dept-filter" class="filter-select" onchange="filterEmployeesList()">
+      <option value="">All Departments</option>
+    </select>
+    <select id="dir-status-filter" class="filter-select" onchange="filterEmployeesList()">
+      <option value="active">Active Personnel</option>
+      <option value="all">All Records</option>
+      <option value="on-notice">On Notice</option>
+      <option value="resigned">Resigned / Former</option>
+    </select>
+  </div>
+
+  <!-- View A: Grid View -->
+  <div id="dir-grid-view" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px;">
+    <!-- Rendered via JS -->
+  </div>
+
+  <!-- View B: Table View -->
+  <div id="dir-table-view" class="table-container" style="display:none;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Designation</th>
+          <th>Department</th>
+          <th>Location</th>
+          <th>Work Mode</th>
+          <th>Status</th>
+          <th style="text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="dir-table-tbody">
+        <!-- Rendered via JS -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+let dirEmployeesCache = [];
+let dirCurrentView = 'grid';
+
+function loadModule_directory() {
+  const user = App.user;
+  if (user && (user.role === 'admin' || user.role === 'hr')) {
+    document.getElementById('btn-add-employee').style.display = 'inline-flex';
+  }
+
+  callApi('Api_Directory_list', [], function(list) {
+    dirEmployeesCache = list || [];
+    populateDepartmentFilter(dirEmployeesCache);
+    filterEmployeesList();
+  }, showToastError);
+}
+
+function populateDepartmentFilter(list) {
+  const select = document.getElementById('dir-dept-filter');
+  if (!select) return;
+  const depts = new Set(list.map(e => e.department).filter(Boolean));
+  let html = '<option value="">All Departments</option>';
+  depts.forEach(d => {
+    html += `<option value="${d}">${d}</option>`;
+  });
+  select.innerHTML = html;
+}
+
+function filterEmployeesList() {
+  const q = (document.getElementById('dir-search-input')?.value || '').toLowerCase().trim();
+  const dept = document.getElementById('dir-dept-filter')?.value || '';
+  const status = document.getElementById('dir-status-filter')?.value || 'active';
+
+  const filtered = dirEmployeesCache.filter(e => {
+    const matchQ = !q || (e.fullName.toLowerCase().includes(q) || e.email.toLowerCase().includes(q) || e.empId.toLowerCase().includes(q) || (e.designation || '').toLowerCase().includes(q));
+    const matchDept = !dept || (e.department === dept);
+    const matchStatus = (status === 'all') || (e.status === status);
+    return matchQ && matchDept && matchStatus;
+  });
+
+  if (dirCurrentView === 'grid') {
+    renderDirectoryGrid(filtered);
+  } else {
+    renderDirectoryTable(filtered);
+  }
+}
+
+function switchDirectoryView(view) {
+  dirCurrentView = view;
+  document.getElementById('btn-view-grid').classList.toggle('btn-primary', view === 'grid');
+  document.getElementById('btn-view-table').classList.toggle('btn-primary', view === 'table');
+  document.getElementById('dir-grid-view').style.display = view === 'grid' ? 'grid' : 'none';
+  document.getElementById('dir-table-view').style.display = view === 'table' ? 'block' : 'none';
+  filterEmployeesList();
+}
+
+function renderDirectoryGrid(list) {
+  const mount = document.getElementById('dir-grid-view');
+  if (!mount) return;
+
+  if (!list.length) {
+    mount.innerHTML = `<div class="card" style="grid-column:1/-1; text-align:center; padding:40px; color:var(--sd-text-muted);">No employees found matching criteria.</div>`;
+    return;
+  }
+
+  mount.innerHTML = list.map(emp => `
+    <div class="card" style="display:flex; flex-direction:column; justify-content:space-between;">
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
+          <div class="avatar" style="width:48px; height:48px; font-size:16px;">
+            ${emp.photoUrl ? `<img src="${emp.photoUrl}" alt="${emp.fullName}">` : emp.fullName.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()}
+          </div>
+          <span class="pill pill-${(emp.status || 'active').toLowerCase()}">${emp.status}</span>
+        </div>
+        <h4 style="font-size:15px; font-weight:700; color:var(--sd-text-primary); margin-bottom:2px;">${emp.fullName}</h4>
+        <p style="font-size:12.5px; color:var(--sd-primary); font-weight:600; margin-bottom:2px;">${emp.designation || 'Staff'}</p>
+        <p style="font-size:12px; color:var(--sd-text-muted); margin-bottom:12px;">${emp.department || 'General'} • <code>${emp.empId}</code></p>
+        
+        <div style="font-size:12px; color:var(--sd-text-secondary); display:flex; flex-direction:column; gap:4px;">
+          <div>📧 ${emp.email}</div>
+          ${emp.phone ? `<div>📞 ${emp.phone}</div>` : ''}
+          <div>📍 ${emp.location || 'Headquarters'} (${emp.reportingLocation || 'onsite'})</div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px; padding-top:12px; border-top:1px solid var(--sd-border-light); display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:11px; color:var(--sd-text-muted);">Joined ${emp.dateOfJoining || '—'}</span>
+        ${(App.user && (App.user.role === 'admin' || App.user.role === 'hr')) ? `
+          <button class="btn btn-secondary btn-sm" onclick="openEditEmployeeModal('${emp.empId}')">Edit</button>
+        ` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderDirectoryTable(list) {
+  const tbody = document.getElementById('dir-table-tbody');
+  if (!tbody) return;
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--sd-text-muted);">No records found.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(emp => `
+    <tr>
+      <td>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="avatar" style="width:32px; height:32px; font-size:12px;">
+            ${emp.photoUrl ? `<img src="${emp.photoUrl}">` : emp.fullName.substring(0,2).toUpperCase()}
+          </div>
+          <div>
+            <strong>${emp.fullName}</strong>
+            <div style="font-size:11px; color:var(--sd-text-muted);">${emp.email} • <code>${emp.empId}</code></div>
+          </div>
+        </div>
+      </td>
+      <td>${emp.designation || '—'}</td>
+      <td>${emp.department || '—'}</td>
+      <td>${emp.location || '—'}</td>
+      <td style="text-transform:capitalize;">${emp.reportingLocation || 'onsite'}</td>
+      <td><span class="pill pill-${(emp.status || 'active').toLowerCase()}">${emp.status}</span></td>
+      <td style="text-align:right;">
+        ${(App.user && (App.user.role === 'admin' || App.user.role === 'hr')) ? `
+          <button class="btn btn-secondary btn-sm" onclick="openEditEmployeeModal('${emp.empId}')">Edit</button>
+        ` : '—'}
+      </td>
+    </tr>
+  `).join('');
+}
+
+function openAddEmployeeModal() {
+  const managers = dirEmployeesCache.filter(e => e.status === 'active');
+  const bodyHtml = `
+    <form id="add-employee-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Full Name *</label>
+          <input type="text" id="emp-fullName" class="form-control" placeholder="Jane Doe" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Work Email *</label>
+          <input type="email" id="emp-email" class="form-control" placeholder="jane.doe@stackdrove.com" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Department *</label>
+          <input type="text" id="emp-department" class="form-control" placeholder="Engineering, HR, Sales" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Designation *</label>
+          <input type="text" id="emp-designation" class="form-control" placeholder="Software Engineer" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Role Tier *</label>
+          <select id="emp-role" class="form-control">
+            <option value="employee">Employee</option>
+            <option value="manager">Manager</option>
+            <option value="hr">HR</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Reporting Manager</label>
+          <select id="emp-managerId" class="form-control">
+            <option value="">No Manager (Root Admin)</option>
+            ${managers.map(m => `<option value="${m.empId}">${m.fullName} (${m.empId} - ${m.designation})</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Date of Joining</label>
+          <input type="date" id="emp-dateOfJoining" class="form-control" value="${new Date().toISOString().split('T')[0]}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Annual Gross CTC (₹)</label>
+          <input type="number" id="emp-ctcAnnual" class="form-control" placeholder="1200000">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Phone Number</label>
+          <input type="tel" id="emp-phone" class="form-control" placeholder="9876543210">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Office Location</label>
+          <input type="text" id="emp-location" class="form-control" value="Headquarters (Bangalore)">
+        </div>
+      </div>
+    </form>
+  `;
+
+  showAppModal('Add New Employee', bodyHtml, 'Save & Send Welcome Email', function() {
+    const payload = {
+      fullName: document.getElementById('emp-fullName').value,
+      email: document.getElementById('emp-email').value,
+      department: document.getElementById('emp-department').value,
+      designation: document.getElementById('emp-designation').value,
+      role: document.getElementById('emp-role').value,
+      managerId: document.getElementById('emp-managerId').value,
+      dateOfJoining: document.getElementById('emp-dateOfJoining').value,
+      ctcAnnual: document.getElementById('emp-ctcAnnual').value,
+      phone: document.getElementById('emp-phone').value,
+      location: document.getElementById('emp-location').value,
+      requestId: newRequestId()
+    };
+
+    if (!payload.fullName || !payload.email) {
+      showToast('Name and Email are required.', 'warning');
+      return;
+    }
+
+    callApi('Api_Directory_save', [payload], function(res) {
+      closeAppModal();
+      showToast(`Employee ${res.fullName} (${res.empId}) created successfully ✓`, 'success');
+      loadModule_directory();
+    }, showToastError);
+  });
+}
+
+function openEditEmployeeModal(empId) {
+  const emp = dirEmployeesCache.find(e => e.empId === empId);
+  if (!emp) return;
+
+  const managers = dirEmployeesCache.filter(e => e.status === 'active' && e.empId !== empId);
+  const bodyHtml = `
+    <form id="edit-employee-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Full Name *</label>
+          <input type="text" id="edit-emp-fullName" class="form-control" value="${emp.fullName}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Work Email *</label>
+          <input type="email" id="edit-emp-email" class="form-control" value="${emp.email}" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Department *</label>
+          <input type="text" id="edit-emp-department" class="form-control" value="${emp.department || ''}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Designation *</label>
+          <input type="text" id="edit-emp-designation" class="form-control" value="${emp.designation || ''}" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Role Tier *</label>
+          <select id="edit-emp-role" class="form-control">
+            <option value="employee" ${emp.role === 'employee' ? 'selected' : ''}>Employee</option>
+            <option value="manager" ${emp.role === 'manager' ? 'selected' : ''}>Manager</option>
+            <option value="hr" ${emp.role === 'hr' ? 'selected' : ''}>HR</option>
+            <option value="admin" ${emp.role === 'admin' ? 'selected' : ''}>Admin</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select id="edit-emp-status" class="form-control">
+            <option value="active" ${emp.status === 'active' ? 'selected' : ''}>Active</option>
+            <option value="on-notice" ${emp.status === 'on-notice' ? 'selected' : ''}>On Notice</option>
+            <option value="resigned" ${emp.status === 'resigned' ? 'selected' : ''}>Resigned</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Reporting Manager</label>
+          <select id="edit-emp-managerId" class="form-control">
+            <option value="">No Manager</option>
+            ${managers.map(m => `<option value="${m.empId}" ${m.empId === emp.managerId ? 'selected' : ''}>${m.fullName} (${m.empId})</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Annual Gross CTC (₹)</label>
+          <input type="number" id="edit-emp-ctcAnnual" class="form-control" value="${emp.ctcAnnual || 0}">
+        </div>
+      </div>
+    </form>
+  `;
+
+  showAppModal(`Edit Employee: ${emp.fullName}`, bodyHtml, 'Save Changes', function() {
+    const payload = {
+      empId: empId,
+      fullName: document.getElementById('edit-emp-fullName').value,
+      email: document.getElementById('edit-emp-email').value,
+      department: document.getElementById('edit-emp-department').value,
+      designation: document.getElementById('edit-emp-designation').value,
+      role: document.getElementById('edit-emp-role').value,
+      status: document.getElementById('edit-emp-status').value,
+      managerId: document.getElementById('edit-emp-managerId').value,
+      ctcAnnual: document.getElementById('edit-emp-ctcAnnual').value,
+      requestId: newRequestId()
+    };
+
+    callApi('Api_Directory_save', [payload], function(res) {
+      closeAppModal();
+      showToast(`Updated record for ${res.fullName} ✓`, 'success');
+      loadModule_directory();
+    }, showToastError);
+  });
+}
+
+function openOrgChartModal() {
+  callApi('Api_Directory_getOrgChart', [], function(tree) {
+    function renderNode(node) {
+      return `
+        <div style="margin-left:20px; margin-top:8px; border-left:2px solid var(--sd-border); padding-left:14px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <strong>${node.name}</strong>
+            <span style="font-size:12px; color:var(--sd-text-muted);">(${node.title} - ${node.dept})</span>
+          </div>
+          ${node.children && node.children.length ? node.children.map(renderNode).join('') : ''}
+        </div>
+      `;
+    }
+
+    const html = `<div style="max-height:60vh; overflow-y:auto;">${tree.map(renderNode).join('')}</div>`;
+    showAppModal('Company Organization Tree', html, null, null);
+  }, showToastError);
+}
+</script>

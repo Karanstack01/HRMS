@@ -1,0 +1,49 @@
+<div id="sidebar-wrapper">
+  <!-- Brand Logo -->
+  <div style="padding: 22px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 10px;">
+    <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #FFF; font-weight: 800; font-size: 16px;">
+      SD
+    </div>
+    <div>
+      <div style="color: #FFF; font-weight: 800; font-size: 15px; letter-spacing: -0.3px; line-height: 1.2;">
+        Stack<span style="color: #818CF8;">Drove</span>
+      </div>
+      <div style="font-size: 11px; color: #64748B; font-weight: 500;">HRMS Suite</div>
+    </div>
+  </div>
+
+  <!-- Dynamic Nav Items Container -->
+  <div id="sidebar-nav" style="flex: 1; padding: 14px 0; overflow-y: auto;">
+    <!-- Items populated dynamically via AppCore.js -->
+  </div>
+
+  <!-- Sidebar Footer / Organization Identity -->
+  <div style="padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 11.5px; color: #64748B; display: flex; justify-content: space-between; align-items: center;">
+    <span id="sidebar-org-name">StackDrove Tech</span>
+    <span style="background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px;">v2.0</span>
+  </div>
+</div>
+
+<script>
+  function renderSidebarNav(navItems, currentHash) {
+    const container = document.getElementById('sidebar-nav');
+    if (!container) return;
+
+    const hash = currentHash || window.location.hash.replace('#', '') || 'dashboard';
+    let html = '';
+
+    navItems.forEach(item => {
+      const isActive = (hash === item.module);
+      const isSpecialClass = item.isSpecial ? 'style="margin-top:16px; border-top:1px solid rgba(255,255,255,0.08); padding-top:14px;"' : '';
+
+      html += `
+        <a href="#${item.module}" class="nav-item ${isActive ? 'active' : ''}" ${isSpecialClass} onclick="navigateTo('${item.module}')">
+          <span class="icon-slot" data-icon="${item.icon}">${getIcon(item.icon)}</span>
+          <span>${item.label}</span>
+        </a>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+</script>

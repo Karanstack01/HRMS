@@ -1,0 +1,201 @@
+<div id="module-dashboard" class="module-container" style="display:block;">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title" id="dash-greeting">Welcome to StackDrove HRMS</h1>
+      <p class="page-subtitle" id="dash-date-str">One system. Every employee moment.</p>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="navigateTo('leave')">
+        <span class="icon-slot" data-icon="calendar-days"></span>
+        <span>Apply Leave</span>
+      </button>
+      <button class="btn btn-primary btn-sm" onclick="navigateTo('directory')">
+        <span class="icon-slot" data-icon="users"></span>
+        <span>Directory</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Manager / HR Actionable Alerts Strip -->
+  <div id="dash-manager-alerts" style="display:none; margin-bottom:24px;">
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px;">
+      <div class="card" style="border-left:4px solid var(--sd-accent); padding:16px; cursor:pointer;" onclick="navigateTo('leave')">
+        <span style="font-size:11.5px; color:var(--sd-text-muted); font-weight:700; text-transform:uppercase;">Pending Leave Approvals</span>
+        <h3 style="font-size:24px; font-weight:800; color:var(--sd-accent); margin-top:4px;" id="dash-metric-pending-leaves">0</h3>
+      </div>
+      <div class="card" style="border-left:4px solid var(--sd-primary); padding:16px; cursor:pointer;" onclick="navigateTo('attendance')">
+        <span style="font-size:11.5px; color:var(--sd-text-muted); font-weight:700; text-transform:uppercase;">Team In Office Today</span>
+        <h3 style="font-size:24px; font-weight:800; color:var(--sd-primary); margin-top:4px;" id="dash-metric-team-in">0</h3>
+      </div>
+      <div class="card" style="border-left:4px solid var(--sd-secondary); padding:16px; cursor:pointer;" onclick="navigateTo('directory')">
+        <span style="font-size:11.5px; color:var(--sd-text-muted); font-weight:700; text-transform:uppercase;">Total Active Headcount</span>
+        <h3 style="font-size:24px; font-weight:800; color:var(--sd-secondary); margin-top:4px;" id="dash-metric-headcount">0</h3>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Grid: KPI Widgets & Shortcuts -->
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:24px;">
+    <!-- Widget 1: Attendance & Today Status -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">My Attendance This Month</h3>
+        <span class="pill pill-approved" id="dash-today-pill">Active</span>
+      </div>
+      <div style="display:flex; align-items:center; justify-content:space-around; padding:12px 0;">
+        <div style="text-align:center;">
+          <div style="font-size:28px; font-weight:800; color:var(--sd-success);" id="dash-att-present">0</div>
+          <div style="font-size:12px; color:var(--sd-text-muted); font-weight:600;">Present Days</div>
+        </div>
+        <div style="height:40px; width:1px; background:var(--sd-border);"></div>
+        <div style="text-align:center;">
+          <div style="font-size:28px; font-weight:800; color:var(--sd-primary);" id="dash-att-hours">0h</div>
+          <div style="font-size:12px; color:var(--sd-text-muted); font-weight:600;">Logged Hours</div>
+        </div>
+        <div style="height:40px; width:1px; background:var(--sd-border);"></div>
+        <div style="text-align:center;">
+          <div style="font-size:28px; font-weight:800; color:var(--sd-accent);" id="dash-att-half">0</div>
+          <div style="font-size:12px; color:var(--sd-text-muted); font-weight:600;">Half Days</div>
+        </div>
+      </div>
+      <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--sd-border-light); display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:13px; color:var(--sd-text-secondary);">Today's Clock-In: <strong id="dash-checkin-time">—</strong></span>
+        <button class="btn btn-secondary btn-sm" onclick="navigateTo('attendance')">View Calendar</button>
+      </div>
+    </div>
+
+    <!-- Widget 2: Leave Balances Overview -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Available Leave Balances</h3>
+        <button class="btn-icon" onclick="navigateTo('leave')">
+          <span class="icon-slot" data-icon="calendar-days"></span>
+        </button>
+      </div>
+      <div id="dash-leave-balances-mount">
+        <!-- Rendered via JS -->
+      </div>
+      <div style="margin-top:16px; padding-top:12px; border-top:1px solid var(--sd-border-light); text-align:right;">
+        <button class="btn btn-primary btn-sm" onclick="navigateTo('leave')">Apply for Leave</button>
+      </div>
+    </div>
+
+    <!-- Widget 3: Upcoming Holidays -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Upcoming Holidays</h3>
+        <button class="btn-icon" onclick="navigateTo('holidays')">
+          <span class="icon-slot" data-icon="calendar"></span>
+        </button>
+      </div>
+      <div id="dash-holidays-mount" style="display:flex; flex-direction:column; gap:10px;">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+
+    <!-- Widget 4: Quick Action Shortcuts & Wall of Fame Spotlight -->
+    <div class="card" style="background:linear-gradient(135deg, #1E1B4B 0%, #0F172A 100%); color:#FFFFFF;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
+        <span class="pill pill-warning">🌟 Spot Award</span>
+        <button class="btn btn-secondary btn-sm" style="background:rgba(255,255,255,0.1); color:#FFF; border:none;" onclick="navigateTo('rewards')">Wall of Fame</button>
+      </div>
+      <h4 style="font-size:16px; font-weight:700; color:#FFFFFF; margin-bottom:6px;">"One system. Every employee moment."</h4>
+      <p style="font-size:13px; color:#C7D2FE; line-height:1.5; margin-bottom:20px;">
+        Celebrate wins, submit reimbursement claims, and explore official company policies seamlessly in StackDrove HRMS.
+      </p>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-secondary btn-sm" style="background:#FFF; color:#0F172A;" onclick="navigateTo('travel')">File Expense</button>
+        <button class="btn btn-secondary btn-sm" style="background:rgba(255,255,255,0.15); color:#FFF; border:none;" onclick="navigateTo('policies')">View Policies</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function loadModule_dashboard() {
+  const user = App.user;
+  const greetingEl = document.getElementById('dash-greeting');
+  const dateEl = document.getElementById('dash-date-str');
+
+  if (user && greetingEl) {
+    const firstName = user.fullName ? user.fullName.split(' ')[0] : 'Colleague';
+    greetingEl.textContent = `Hello, ${firstName}! 👋`;
+  }
+  if (dateEl) {
+    dateEl.textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  // If Manager or HR/Admin, show manager metrics strip
+  if (user && (user.role === 'manager' || user.role === 'hr' || user.role === 'admin')) {
+    const alertsStrip = document.getElementById('dash-manager-alerts');
+    if (alertsStrip) alertsStrip.style.display = 'block';
+
+    callApi('Api_Leave_getApprovals', [], function(list) {
+      const el = document.getElementById('dash-metric-pending-leaves');
+      if (el) el.textContent = list ? list.length : 0;
+    });
+
+    callApi('Api_Attendance_getTeam', [], function(list) {
+      const el = document.getElementById('dash-metric-team-in');
+      if (el && list) {
+        const inCount = list.filter(m => m.attendance && m.attendance.status === 'Present').length;
+        el.textContent = `${inCount} / ${list.length}`;
+      }
+    });
+
+    callApi('Api_Directory_list', [], function(list) {
+      const el = document.getElementById('dash-metric-headcount');
+      if (el) el.textContent = list ? list.filter(e => e.status === 'active').length : 0;
+    });
+  }
+
+  // Load My Attendance
+  callApi('Api_Attendance_getMy', [], function(res) {
+    if (res && res.stats) {
+      document.getElementById('dash-att-present').textContent = res.stats.presentCount;
+      document.getElementById('dash-att-hours').textContent = res.stats.totalHours + 'h';
+      document.getElementById('dash-att-half').textContent = res.stats.halfDayCount;
+    }
+    if (res && res.today && res.today.punchInTime) {
+      document.getElementById('dash-checkin-time').textContent = new Date(res.today.punchInTime).toLocaleTimeString();
+    }
+  });
+
+  // Load My Leave Balances
+  callApi('Api_Leave_getMyRequests', [], function(data) {
+    const mount = document.getElementById('dash-leave-balances-mount');
+    if (!mount) return;
+    const balances = data?.balances || [];
+    if (!balances.length) {
+      mount.innerHTML = `<p style="font-size:12px; color:var(--sd-text-muted);">No balances recorded.</p>`;
+      return;
+    }
+    mount.innerHTML = balances.map(b => `
+      <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:8px;">
+        <span><strong>${b.leaveType}</strong></span>
+        <span><strong style="color:var(--sd-primary);">${b.balance}</strong> days remaining</span>
+      </div>
+    `).join('');
+  });
+
+  // Load Holidays
+  callApi('Api_Holidays_list', [], function(list) {
+    const mount = document.getElementById('dash-holidays-mount');
+    if (!mount) return;
+    const todayStr = new Date().toISOString().split('T')[0];
+    const upcoming = (list || []).filter(h => h.date >= todayStr).slice(0, 3);
+
+    if (!upcoming.length) {
+      mount.innerHTML = `<p style="font-size:12px; color:var(--sd-text-muted);">No upcoming holidays this month.</p>`;
+      return;
+    }
+
+    mount.innerHTML = upcoming.map(h => `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:var(--sd-surface-subtle); border-radius:6px; font-size:13px;">
+        <span><strong>${h.name}</strong></span>
+        <span class="pill pill-holiday">${h.date}</span>
+      </div>
+    `).join('');
+  });
+}
+</script>
