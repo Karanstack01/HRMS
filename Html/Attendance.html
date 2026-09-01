@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,6 +16,7 @@
       justify-content: center;
       padding: 20px;
     }
+
     .kiosk-card {
       background: #FFFFFF;
       color: #0F172A;
@@ -25,6 +27,7 @@
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
       text-align: center;
     }
+
     .big-punch-btn {
       width: 180px;
       height: 180px;
@@ -43,19 +46,23 @@
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
     }
+
     .big-punch-btn:hover {
       transform: scale(1.05);
     }
+
     .big-punch-in {
       background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
       color: #FFFFFF;
       box-shadow: 0 12px 30px rgba(34, 197, 94, 0.4);
     }
+
     .big-punch-out {
       background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
       color: #FFFFFF;
       box-shadow: 0 12px 30px rgba(239, 68, 68, 0.4);
     }
+
     .punch-done {
       background: #F1F5F9;
       color: #64748B;
@@ -64,162 +71,167 @@
     }
   </style>
 </head>
+
 <body>
 
-<div class="kiosk-card">
-  <div style="font-size:24px; font-weight:800; color:#0F172A; margin-bottom:4px;">
-    Stack<span style="color:#4F46E5;">Drove</span> HRMS
-  </div>
-  <p style="font-size:13px; color:#64748B; margin-bottom:20px;">Daily Attendance Check-In Portal</p>
-
-  <!-- Mode Selector: SSO vs Emp ID / PIN -->
-  <div style="display:flex; justify-content:center; gap:8px; margin-bottom:20px;">
-    <button class="btn btn-secondary btn-sm" id="btn-mode-sso" onclick="setKioskMode('sso')">Workspace SSO</button>
-    <button class="btn btn-secondary btn-sm" id="btn-mode-pin" onclick="setKioskMode('pin')">Emp ID & PIN</button>
-  </div>
-
-  <!-- Emp ID / PIN Input Section -->
-  <div id="kiosk-pin-section" style="display:none; text-align:left; margin-bottom:20px; background:#F8FAFC; padding:16px; border-radius:12px; border:1px solid #E2E8F0;">
-    <div class="form-group" style="margin-bottom:10px;">
-      <label class="form-label" style="font-size:12px;">Employee ID</label>
-      <input type="text" id="kiosk-empid" class="form-control" placeholder="SD-0001">
+  <div class="kiosk-card">
+    <div style="font-size:24px; font-weight:800; color:#0F172A; margin-bottom:4px;">
+      Stack<span style="color:#4F46E5;">Drove</span> HRMS
     </div>
-    <div class="form-group" style="margin-bottom:0;">
-      <label class="form-label" style="font-size:12px;">Security PIN (or phone last 4)</label>
-      <input type="password" id="kiosk-pin" class="form-control" placeholder="••••" maxlength="6">
+    <p style="font-size:13px; color:#64748B; margin-bottom:20px;">Daily Attendance Check-In Portal</p>
+
+    <!-- Mode Selector: SSO vs Emp ID / PIN -->
+    <div style="display:flex; justify-content:center; gap:8px; margin-bottom:20px;">
+      <button class="btn btn-secondary btn-sm" id="btn-mode-sso" onclick="setKioskMode('sso')">Workspace SSO</button>
+      <button class="btn btn-secondary btn-sm" id="btn-mode-pin" onclick="setKioskMode('pin')">Emp ID & PIN</button>
+    </div>
+
+    <!-- Emp ID / PIN Input Section -->
+    <div id="kiosk-pin-section"
+      style="display:none; text-align:left; margin-bottom:20px; background:#F8FAFC; padding:16px; border-radius:12px; border:1px solid #E2E8F0;">
+      <div class="form-group" style="margin-bottom:10px;">
+        <label class="form-label" style="font-size:12px;">Employee ID</label>
+        <input type="text" id="kiosk-empid" class="form-control" placeholder="SD-0001">
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label" style="font-size:12px;">Security PIN (or phone last 4)</label>
+        <input type="password" id="kiosk-pin" class="form-control" placeholder="••••" maxlength="6">
+      </div>
+    </div>
+
+    <!-- Active User Banner -->
+    <div id="kiosk-user-banner" style="margin-bottom:12px;">
+      <h3 style="font-size:18px; font-weight:700;" id="kiosk-emp-name">Loading Profile...</h3>
+      <p style="font-size:13px; color:#4F46E5; font-weight:600;" id="kiosk-emp-desig">Verifying session</p>
+    </div>
+
+    <!-- Live Clock -->
+    <div style="font-size:28px; font-weight:800; font-family:'Inter', monospace; color:#0F172A; margin:10px 0;"
+      id="live-clock">
+      00:00:00
+    </div>
+    <div style="font-size:12px; color:#64748B;" id="live-date"></div>
+
+    <!-- Big Punch Button -->
+    <button id="kiosk-punch-btn" class="big-punch-btn big-punch-in" onclick="executeKioskPunch()">
+      <span id="kiosk-punch-text">PUNCH IN</span>
+      <span style="font-size:12px; font-weight:500; opacity:0.9;" id="kiosk-punch-sub">Click to record</span>
+    </button>
+
+    <!-- Day Summary -->
+    <div id="kiosk-summary-box" style="margin-top:16px; font-size:13px; color:#475569;">
+      Today: <span id="kiosk-day-summary">No check-in yet</span>
+    </div>
+
+    <div style="margin-top:28px; border-top:1px solid #E2E8F0; padding-top:16px;">
+      <a href="<?!= ScriptApp.getService().getUrl() ?>"
+        style="color:#4F46E5; font-size:13px; text-decoration:none; font-weight:600;">
+        Open Full StackDrove HRMS Portal →
+      </a>
     </div>
   </div>
 
-  <!-- Active User Banner -->
-  <div id="kiosk-user-banner" style="margin-bottom:12px;">
-    <h3 style="font-size:18px; font-weight:700;" id="kiosk-emp-name">Loading Profile...</h3>
-    <p style="font-size:13px; color:#4F46E5; font-weight:600;" id="kiosk-emp-desig">Verifying session</p>
-  </div>
+  <?!= include('Html/Partials/Icons'); ?>
+  <?!= include('Html/Partials/AppCore'); ?>
 
-  <!-- Live Clock -->
-  <div style="font-size:28px; font-weight:800; font-family:'Inter', monospace; color:#0F172A; margin:10px 0;" id="live-clock">
-    00:00:00
-  </div>
-  <div style="font-size:12px; color:#64748B;" id="live-date"></div>
+  <script>
+    let currentMode = 'sso';
+    let kioskUser = null;
 
-  <!-- Big Punch Button -->
-  <button id="kiosk-punch-btn" class="big-punch-btn big-punch-in" onclick="executeKioskPunch()">
-    <span id="kiosk-punch-text">PUNCH IN</span>
-    <span style="font-size:12px; font-weight:500; opacity:0.9;" id="kiosk-punch-sub">Click to record</span>
-  </button>
+    function setKioskMode(mode) {
+      currentMode = mode;
+      document.getElementById('btn-mode-sso').classList.toggle('btn-primary', mode === 'sso');
+      document.getElementById('btn-mode-pin').classList.toggle('btn-primary', mode === 'pin');
+      document.getElementById('kiosk-pin-section').style.display = mode === 'pin' ? 'block' : 'none';
+    }
 
-  <!-- Day Summary -->
-  <div id="kiosk-summary-box" style="margin-top:16px; font-size:13px; color:#475569;">
-    Today: <span id="kiosk-day-summary">No check-in yet</span>
-  </div>
+    function updateLiveClock() {
+      const now = new Date();
+      document.getElementById('live-clock').textContent = now.toLocaleTimeString();
+      document.getElementById('live-date').textContent = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+    setInterval(updateLiveClock, 1000);
+    updateLiveClock();
 
-  <div style="margin-top:28px; border-top:1px solid #E2E8F0; padding-top:16px;">
-    <a href="<?!= ScriptApp.getService().getUrl() ?>" style="color:#4F46E5; font-size:13px; text-decoration:none; font-weight:600;">
-      Open Full StackDrove HRMS Portal →
-    </a>
-  </div>
-</div>
+    document.addEventListener('DOMContentLoaded', function () {
+      setKioskMode('sso');
+      loadKioskStatus();
+    });
 
-<?!= include('Html/Partials/Icons'); ?>
-<?!= include('Html/Partials/AppCore'); ?>
+    function loadKioskStatus() {
+      callApi('Api_Attendance_getMy', [], function (res) {
+        if (res && res.today) {
+          const r = res.today;
+          const btn = document.getElementById('kiosk-punch-btn');
+          const text = document.getElementById('kiosk-punch-text');
+          const sub = document.getElementById('kiosk-punch-sub');
+          const summary = document.getElementById('kiosk-day-summary');
 
-<script>
-let currentMode = 'sso';
-let kioskUser = null;
+          if (r.punchInTime && !r.punchOutTime) {
+            btn.className = 'big-punch-btn big-punch-out';
+            text.textContent = 'PUNCH OUT';
+            sub.textContent = `In at ${new Date(r.punchInTime).toLocaleTimeString()}`;
+            summary.textContent = `Punched in at ${new Date(r.punchInTime).toLocaleTimeString()}`;
+            App.punchStatus.isPunchedIn = true;
+          } else if (r.punchInTime && r.punchOutTime) {
+            btn.className = 'big-punch-btn punch-done';
+            btn.disabled = true;
+            text.textContent = 'COMPLETED ✓';
+            sub.textContent = `${r.workedHours || 0} hrs worked`;
+            summary.textContent = `Punched in: ${new Date(r.punchInTime).toLocaleTimeString()} | Out: ${new Date(r.punchOutTime).toLocaleTimeString()} (${r.workedHours}h)`;
+          }
+        }
+      });
 
-function setKioskMode(mode) {
-  currentMode = mode;
-  document.getElementById('btn-mode-sso').classList.toggle('btn-primary', mode === 'sso');
-  document.getElementById('btn-mode-pin').classList.toggle('btn-primary', mode === 'pin');
-  document.getElementById('kiosk-pin-section').style.display = mode === 'pin' ? 'block' : 'none';
-}
+      // Resolve user info
+      callApi('Api_Directory_list', [], function (list) {
+        if (list && list.length) {
+          const me = list[0]; // Active caller
+          document.getElementById('kiosk-emp-name').textContent = me.fullName;
+          document.getElementById('kiosk-emp-desig').textContent = `${me.designation} • ${me.department}`;
+        }
+      });
+    }
 
-function updateLiveClock() {
-  const now = new Date();
-  document.getElementById('live-clock').textContent = now.toLocaleTimeString();
-  document.getElementById('live-date').textContent = now.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-}
-setInterval(updateLiveClock, 1000);
-updateLiveClock();
+    function executeKioskPunch() {
+      const isPunchedIn = App.punchStatus.isPunchedIn;
+      const action = isPunchedIn ? 'OUT' : 'IN';
+      const reqId = newRequestId();
 
-document.addEventListener('DOMContentLoaded', function() {
-  setKioskMode('sso');
-  loadKioskStatus();
-});
+      let empIdOverride = null;
+      let pin = null;
+      if (currentMode === 'pin') {
+        empIdOverride = document.getElementById('kiosk-empid')?.value;
+        pin = document.getElementById('kiosk-pin')?.value;
+        if (!empIdOverride) {
+          showToast('Please enter your Employee ID', 'warning');
+          return;
+        }
+      }
 
-function loadKioskStatus() {
-  callApi('Api_Attendance_getMy', [], function(res) {
-    if (res && res.today) {
-      const r = res.today;
       const btn = document.getElementById('kiosk-punch-btn');
-      const text = document.getElementById('kiosk-punch-text');
-      const sub = document.getElementById('kiosk-punch-sub');
-      const summary = document.getElementById('kiosk-day-summary');
+      btn.disabled = true;
 
-      if (r.punchInTime && !r.punchOutTime) {
-        btn.className = 'big-punch-btn big-punch-out';
-        text.textContent = 'PUNCH OUT';
-        sub.textContent = `In at ${new Date(r.punchInTime).toLocaleTimeString()}`;
-        summary.textContent = `Punched in at ${new Date(r.punchInTime).toLocaleTimeString()}`;
-        App.punchStatus.isPunchedIn = true;
-      } else if (r.punchInTime && r.punchOutTime) {
-        btn.className = 'big-punch-btn punch-done';
-        btn.disabled = true;
-        text.textContent = 'COMPLETED ✓';
-        sub.textContent = `${r.workedHours || 0} hrs worked`;
-        summary.textContent = `Punched in: ${new Date(r.punchInTime).toLocaleTimeString()} | Out: ${new Date(r.punchOutTime).toLocaleTimeString()} (${r.workedHours}h)`;
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          pos => postPunch(action, `${pos.coords.latitude},${pos.coords.longitude}`, reqId, empIdOverride, pin),
+          () => postPunch(action, 'Office Device', reqId, empIdOverride, pin)
+        );
+      } else {
+        postPunch(action, 'Web Kiosk', reqId, empIdOverride, pin);
       }
     }
-  });
-
-  // Resolve user info
-  callApi('Api_Directory_list', [], function(list) {
-    if (list && list.length) {
-      const me = list[0]; // Active caller
-      document.getElementById('kiosk-emp-name').textContent = me.fullName;
-      document.getElementById('kiosk-emp-desig').textContent = `${me.designation} • ${me.department}`;
+    // hello testing
+    function postPunch(action, geo, reqId, empIdOverride, pin) {
+      callApi('Api_Attendance_punch', [action, geo, reqId, empIdOverride, pin], function (res) {
+        showToast(`Punch ${action} recorded successfully ✓`, 'success');
+        loadKioskStatus();
+      }, function (err) {
+        document.getElementById('kiosk-punch-btn').disabled = false;
+        showToastError(err);
+      });
     }
-  });
-}
-
-function executeKioskPunch() {
-  const isPunchedIn = App.punchStatus.isPunchedIn;
-  const action = isPunchedIn ? 'OUT' : 'IN';
-  const reqId = newRequestId();
-
-  let empIdOverride = null;
-  let pin = null;
-  if (currentMode === 'pin') {
-    empIdOverride = document.getElementById('kiosk-empid')?.value;
-    pin = document.getElementById('kiosk-pin')?.value;
-    if (!empIdOverride) {
-      showToast('Please enter your Employee ID', 'warning');
-      return;
-    }
-  }
-
-  const btn = document.getElementById('kiosk-punch-btn');
-  btn.disabled = true;
-
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      pos => postPunch(action, `${pos.coords.latitude},${pos.coords.longitude}`, reqId, empIdOverride, pin),
-      () => postPunch(action, 'Office Device', reqId, empIdOverride, pin)
-    );
-  } else {
-    postPunch(action, 'Web Kiosk', reqId, empIdOverride, pin);
-  }
-}
-
-function postPunch(action, geo, reqId, empIdOverride, pin) {
-  callApi('Api_Attendance_punch', [action, geo, reqId, empIdOverride, pin], function(res) {
-    showToast(`Punch ${action} recorded successfully ✓`, 'success');
-    loadKioskStatus();
-  }, function(err) {
-    document.getElementById('kiosk-punch-btn').disabled = false;
-    showToastError(err);
-  });
-}
-</script>
+  </script>
 </body>
+
 </html>
