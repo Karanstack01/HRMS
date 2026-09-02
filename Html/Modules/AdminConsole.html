@@ -19,17 +19,22 @@
   <!-- System Health & Quota Strip -->
   <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:24px;">
     <div class="card" style="padding:16px;">
-      <span style="font-size:11.5px; color:var(--sd-text-muted); font-weight:700; text-transform:uppercase;">Daily Mail Quota</span>
-      <h3 style="font-size:24px; font-weight:800; color:var(--sd-primary); margin-top:4px;" id="admin-quota-val">500</h3>
+      <span style="font-size:11.5px; color:var(--sd-text-muted); font-weight:700; text-transform:uppercase;">Daily Mail
+        Quota</span>
+      <h3 style="font-size:24px; font-weight:800; color:var(--sd-primary); margin-top:4px;" id="admin-quota-val">500
+      </h3>
       <span style="font-size:11px; color:var(--sd-text-muted);">Remaining Gmail sends</span>
     </div>
     <div class="card" style="padding:16px;">
-      <span style="font-size:11.5px; color:var(--sd-text-muted); font-weight:700; text-transform:uppercase;">Active Cron Triggers</span>
-      <h3 style="font-size:24px; font-weight:800; color:var(--sd-success); margin-top:4px;" id="admin-triggers-val">5</h3>
+      <span style="font-size:11.5px; color:var(--sd-text-muted); font-weight:700; text-transform:uppercase;">Active Cron
+        Triggers</span>
+      <h3 style="font-size:24px; font-weight:800; color:var(--sd-success); margin-top:4px;" id="admin-triggers-val">5
+      </h3>
       <span style="font-size:11px; color:var(--sd-text-muted);">Background automation tasks</span>
     </div>
     <div class="card" style="padding:16px;">
-      <span style="font-size:11.5px; color:var(--sd-text-muted); font-weight:700; text-transform:uppercase;">System Health</span>
+      <span style="font-size:11.5px; color:var(--sd-text-muted); font-weight:700; text-transform:uppercase;">System
+        Health</span>
       <h3 style="font-size:24px; font-weight:800; color:var(--sd-success); margin-top:4px;">Optimal</h3>
       <span style="font-size:11px; color:var(--sd-text-muted);">All services operational</span>
     </div>
@@ -76,9 +81,11 @@
     <div class="card">
       <h3 class="card-title" style="margin-bottom:16px;">Google Drive Storage Folders</h3>
       <p style="font-size:13px; color:var(--sd-text-secondary); margin-bottom:16px;">
-        Generated PDF payslips, official letters, and policy documents are automatically stored in your dedicated Drive folder structure:
+        Generated PDF payslips, official letters, and policy documents are automatically stored in your dedicated Drive
+        folder structure:
       </p>
-      <div style="background:var(--sd-surface-subtle); padding:14px; border-radius:8px; font-family:'JetBrains Mono', monospace; font-size:12px; line-height:1.8;">
+      <div
+        style="background:var(--sd-surface-subtle); padding:14px; border-radius:8px; font-family:'JetBrains Mono', monospace; font-size:12px; line-height:1.8;">
         📁 StackDrove_Files/<br>
         &nbsp;&nbsp;├── 📁 Payslips/<br>
         &nbsp;&nbsp;├── 📁 Letters/<br>
@@ -88,7 +95,7 @@
       </div>
     </div>
   </div>
-
+  <!--  -->
   <!-- Audit Log Table -->
   <div class="card">
     <div class="card-header">
@@ -114,36 +121,36 @@
 </div>
 
 <script>
-function loadModule_admin() {
-  callApi('Api_Admin_getConfig', [], function(res) {
-    if (!res) return;
-    const c = res.config;
-    document.getElementById('adm-org-name').value = c.ORG_NAME || 'StackDrove Technologies';
-    document.getElementById('adm-currency').value = c.CURRENCY || 'INR';
-    document.getElementById('adm-hours').value = c.WORK_HOURS_PER_DAY || 8;
-    document.getElementById('adm-checkin').value = c.STANDARD_CHECKIN_TIME || '09:30';
-    document.getElementById('adm-checkout').value = c.STANDARD_CHECKOUT_TIME || '18:30';
-    document.getElementById('adm-mail-name').value = c.SYSTEM_FROM_NAME || 'StackDrove HRMS';
+  function loadModule_admin() {
+    callApi('Api_Admin_getConfig', [], function (res) {
+      if (!res) return;
+      const c = res.config;
+      document.getElementById('adm-org-name').value = c.ORG_NAME || 'StackDrove Technologies';
+      document.getElementById('adm-currency').value = c.CURRENCY || 'INR';
+      document.getElementById('adm-hours').value = c.WORK_HOURS_PER_DAY || 8;
+      document.getElementById('adm-checkin').value = c.STANDARD_CHECKIN_TIME || '09:30';
+      document.getElementById('adm-checkout').value = c.STANDARD_CHECKOUT_TIME || '18:30';
+      document.getElementById('adm-mail-name').value = c.SYSTEM_FROM_NAME || 'StackDrove HRMS';
 
-    if (res.health) {
-      document.getElementById('admin-quota-val').textContent = res.health.dailyMailQuotaRemaining;
-      document.getElementById('admin-triggers-val').textContent = res.health.triggersRegistered;
-    }
+      if (res.health) {
+        document.getElementById('admin-quota-val').textContent = res.health.dailyMailQuotaRemaining;
+        document.getElementById('admin-triggers-val').textContent = res.health.triggersRegistered;
+      }
 
-    renderAuditLogs(res.auditLogs || []);
-  }, showToastError);
-}
-
-function renderAuditLogs(logs) {
-  const tbody = document.getElementById('admin-audit-tbody');
-  if (!tbody) return;
-
-  if (!logs.length) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--sd-text-muted);">No audit logs recorded.</td></tr>`;
-    return;
+      renderAuditLogs(res.auditLogs || []);
+    }, showToastError);
   }
 
-  tbody.innerHTML = logs.map(l => `
+  function renderAuditLogs(logs) {
+    const tbody = document.getElementById('admin-audit-tbody');
+    if (!tbody) return;
+
+    if (!logs.length) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--sd-text-muted);">No audit logs recorded.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = logs.map(l => `
     <tr>
       <td>${new Date(l.timestamp).toLocaleString()}</td>
       <td><strong>${l.actorEmpId}</strong></td>
@@ -152,37 +159,37 @@ function renderAuditLogs(logs) {
       <td><code>${l.recordId || '—'}</code></td>
     </tr>
   `).join('');
-}
+  }
 
-function saveAdminSettings() {
-  const payload = {
-    ORG_NAME: document.getElementById('adm-org-name').value,
-    CURRENCY: document.getElementById('adm-currency').value,
-    WORK_HOURS_PER_DAY: document.getElementById('adm-hours').value,
-    STANDARD_CHECKIN_TIME: document.getElementById('adm-checkin').value,
-    STANDARD_CHECKOUT_TIME: document.getElementById('adm-checkout').value,
-    SYSTEM_FROM_NAME: document.getElementById('adm-mail-name').value
-  };
+  function saveAdminSettings() {
+    const payload = {
+      ORG_NAME: document.getElementById('adm-org-name').value,
+      CURRENCY: document.getElementById('adm-currency').value,
+      WORK_HOURS_PER_DAY: document.getElementById('adm-hours').value,
+      STANDARD_CHECKIN_TIME: document.getElementById('adm-checkin').value,
+      STANDARD_CHECKOUT_TIME: document.getElementById('adm-checkout').value,
+      SYSTEM_FROM_NAME: document.getElementById('adm-mail-name').value
+    };
 
-  callApi('Api_Admin_saveConfig', [payload], function() {
-    showToast('Global settings updated ✓', 'success');
-  }, showToastError);
-}
+    callApi('Api_Admin_saveConfig', [payload], function () {
+      showToast('Global settings updated', 'success');
+    }, showToastError);
+  }
 
-function reinstallTriggers() {
-  callApi('Api_Admin_reinstallTriggers', [], function(res) {
-    showToast(`Triggers installed: ${res.installed.length} active cron routines ✓`, 'success');
-    loadModule_admin();
-  }, showToastError);
-}
+  function reinstallTriggers() {
+    callApi('Api_Admin_reinstallTriggers', [], function (res) {
+      showToast(`Triggers installed: ${res.installed.length} active cron routines`, 'success');
+      loadModule_admin();
+    }, showToastError);
+  }
 
-function runSystemBootstrap() {
-  if (!confirm('Run complete system setup? This will create all sheets, headers, seed data, and drive folders.')) return;
+  function runSystemBootstrap() {
+    if (!confirm('Run complete system setup? This will create all sheets, headers, seed data, and drive folders.')) return;
 
-  showToast('Initializing system tables & structures...', 'info');
-  callApi('Api_Admin_initializeSystem', [], function(res) {
-    showToast(`System initialized with ${res.createdSheets.length} sheets ✓`, 'success');
-    loadModule_admin();
-  }, showToastError);
-}
+    showToast('Initializing system tables & structures...', 'info');
+    callApi('Api_Admin_initializeSystem', [], function (res) {
+      showToast(`System initialized with ${res.createdSheets.length} sheets`, 'success');
+      loadModule_admin();
+    }, showToastError);
+  }
 </script>

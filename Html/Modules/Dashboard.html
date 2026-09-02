@@ -94,18 +94,23 @@
     </div>
 
     <!-- Widget 4: Quick Action Shortcuts & Wall of Fame Spotlight -->
-    <div class="card" style="background:linear-gradient(135deg, #1E1B4B 0%, #0F172A 100%); color:#FFFFFF;">
+    <div class="card" style="background:#0B1635; border:1px solid rgba(255,255,255,0.08); color:#FFFFFF;">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
-        <span class="pill pill-warning">🌟 Spot Award</span>
+        <span class="pill pill-warning">
+          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;">
+            <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+          </svg>
+          Spot Award
+        </span>
         <button class="btn btn-secondary btn-sm" style="background:rgba(255,255,255,0.1); color:#FFF; border:none;" onclick="navigateTo('rewards')">Wall of Fame</button>
       </div>
-      <h4 style="font-size:16px; font-weight:700; color:#FFFFFF; margin-bottom:6px;">"One system. Every employee moment."</h4>
-      <p style="font-size:13px; color:#C7D2FE; line-height:1.5; margin-bottom:20px;">
+      <h4 style="font-size:16px; font-weight:700; color:#FFFFFF; margin-bottom:6px;">"Build. Automate. Scale."</h4>
+      <p style="font-size:13px; color:#94A3B8; line-height:1.5; margin-bottom:20px;">
         Celebrate wins, submit reimbursement claims, and explore official company policies seamlessly in StackDrove HRMS.
       </p>
       <div style="display:flex; gap:10px;">
-        <button class="btn btn-secondary btn-sm" style="background:#FFF; color:#0F172A;" onclick="navigateTo('travel')">File Expense</button>
-        <button class="btn btn-secondary btn-sm" style="background:rgba(255,255,255,0.15); color:#FFF; border:none;" onclick="navigateTo('policies')">View Policies</button>
+        <button class="btn btn-secondary btn-sm" style="background:#FFFFFF; color:#0B1635; font-weight:600; border:none;" onclick="navigateTo('travel')">File Expense</button>
+        <button class="btn btn-secondary btn-sm" style="background:rgba(255,255,255,0.12); color:#FFF; border:none;" onclick="navigateTo('policies')">View Policies</button>
       </div>
     </div>
   </div>
@@ -119,7 +124,7 @@ function loadModule_dashboard() {
 
   if (user && greetingEl) {
     const firstName = user.fullName ? user.fullName.split(' ')[0] : 'Colleague';
-    greetingEl.textContent = `Hello, ${firstName}! 👋`;
+    greetingEl.textContent = `Hello, ${firstName}`;
   }
   if (dateEl) {
     dateEl.textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });

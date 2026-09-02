@@ -136,7 +136,7 @@ function openAddHolidayModal() {
 
     callApi('Api_Holidays_create', [payload], function() {
       closeAppModal();
-      showToast('Holiday added to calendar ✓', 'success');
+      showToast('Holiday added to calendar', 'success');
       loadModule_holidays();
     }, showToastError);
   });

@@ -114,11 +114,11 @@ function renderMyAppraisal(list) {
           <div class="form-group">
             <label class="form-label">Self Rating (1 to 5 Stars) *</label>
             <select id="self-rating" class="form-control" style="width:180px;">
-              <option value="5">⭐⭐⭐⭐⭐ (5 - Exceptional)</option>
-              <option value="4" selected>⭐⭐⭐⭐ (4 - Exceeds Expectations)</option>
-              <option value="3">⭐⭐⭐ (3 - Meets Expectations)</option>
-              <option value="2">⭐⭐ (2 - Needs Improvement)</option>
-              <option value="1">⭐ (1 - Unsatisfactory)</option>
+              <option value="5">5.0 — Exceptional</option>
+              <option value="4" selected>4.0 — Exceeds Expectations</option>
+              <option value="3">3.0 — Meets Expectations</option>
+              <option value="2">2.0 — Needs Improvement</option>
+              <option value="1">1.0 — Unsatisfactory</option>
             </select>
           </div>
           <div class="form-group">
@@ -129,9 +129,9 @@ function renderMyAppraisal(list) {
         </div>
       ` : `
         <div style="background:var(--sd-surface-subtle); padding:20px; border-radius:12px;">
-          <p style="font-size:14px; margin-bottom:8px;"><strong>Self Rating:</strong> ⭐ ${cur.selfRating} / 5</p>
-          ${cur.managerRating ? `<p style="font-size:14px; margin-bottom:8px;"><strong>Manager Rating:</strong> ⭐ ${cur.managerRating} / 5 (${cur.managerComments || 'Good progress'})</p>` : ''}
-          ${cur.finalRating ? `<p style="font-size:14px; font-weight:700; color:var(--sd-success); margin-bottom:8px;"><strong>Final Calibrated Rating:</strong> ⭐ ${cur.finalRating} / 5</p>` : ''}
+          <p style="font-size:14px; margin-bottom:8px;"><strong>Self Rating:</strong> ${cur.selfRating} / 5.0</p>
+          ${cur.managerRating ? `<p style="font-size:14px; margin-bottom:8px;"><strong>Manager Rating:</strong> ${cur.managerRating} / 5.0 (${cur.managerComments || 'Good progress'})</p>` : ''}
+          ${cur.finalRating ? `<p style="font-size:14px; font-weight:700; color:var(--sd-success); margin-bottom:8px;"><strong>Final Calibrated Rating:</strong> ${cur.finalRating} / 5.0</p>` : ''}
           <p style="font-size:13px; color:var(--sd-text-muted);">Current Stage: <em>${cur.status}</em></p>
         </div>
       `}
@@ -149,7 +149,7 @@ function submitSelfReview(appraisalId) {
   }
 
   callApi('Api_Appraisals_submitSelf', [appraisalId, rating, achievements], function() {
-    showToast('Self review submitted to manager ✓', 'success');
+    showToast('Self review submitted to manager', 'success');
     loadModule_appraisals();
   }, showToastError);
 }
@@ -163,9 +163,9 @@ function renderTeamAppraisals(list) {
       <td><strong>${a.employeeName}</strong> <code>(${a.empId})</code></td>
       <td>${a.cycle}</td>
       <td><span class="pill pill-${a.status === 'Completed' ? 'approved' : 'pending'}">${a.status}</span></td>
-      <td>${a.selfRating ? '⭐ ' + a.selfRating : '—'}</td>
-      <td>${a.managerRating ? '⭐ ' + a.managerRating : '—'}</td>
-      <td>${a.finalRating ? '⭐ ' + a.finalRating : '—'}</td>
+      <td>${a.selfRating ? a.selfRating + ' / 5.0' : '—'}</td>
+      <td>${a.managerRating ? a.managerRating + ' / 5.0' : '—'}</td>
+      <td>${a.finalRating ? a.finalRating + ' / 5.0' : '—'}</td>
       <td style="text-align:right;">
         ${(a.status === 'Manager-Pending' && App.user.role !== 'employee') ? `
           <button class="btn btn-primary btn-sm" onclick="openManagerRatingModal('${a.appraisalId}', '${a.employeeName}')">Rate</button>
@@ -203,7 +203,7 @@ function openManagerRatingModal(appraisalId, empName) {
     }
     callApi('Api_Appraisals_submitManager', [appraisalId, rating, comments], function() {
       closeAppModal();
-      showToast('Manager review submitted for HR review ✓', 'success');
+      showToast('Manager review submitted for HR review', 'success');
       loadModule_appraisals();
     }, showToastError);
   });
@@ -230,7 +230,7 @@ function openHrCalibrateModal(appraisalId, empName) {
     const remarks = document.getElementById('hr-remarks')?.value;
     callApi('Api_Appraisals_finalize', [appraisalId, rating, remarks], function() {
       closeAppModal();
-      showToast('Appraisal cycle completed and locked ✓', 'success');
+      showToast('Appraisal cycle completed and locked', 'success');
       loadModule_appraisals();
     }, showToastError);
   });

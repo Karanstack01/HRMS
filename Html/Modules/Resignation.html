@@ -148,7 +148,7 @@ function submitResignation() {
   if (!confirm('Are you sure you want to submit your resignation notice?')) return;
 
   callApi('Api_Resignation_submit', [payload], function() {
-    showToast('Resignation notice submitted to manager & HR ✓', 'success');
+    showToast('Resignation notice submitted to manager & HR', 'success');
     loadModule_resignation();
   }, showToastError);
 }
@@ -196,7 +196,7 @@ function openClearanceModal(resId) {
     callApi('Api_Resignation_updateChecklist', [resId, updatedChecklist], function() {
       callApi('Api_Resignation_finalize', [resId, lwdFinal], function() {
         closeAppModal();
-        showToast('Offboarding completed & Relieving letter queued ✓', 'success');
+        showToast('Offboarding completed & Relieving letter queued', 'success');
         loadModule_resignation();
       }, showToastError);
     }, showToastError);

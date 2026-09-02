@@ -1,32 +1,33 @@
 # 07 — UI/UX Design System
-
-(Colors/fonts already defined in `00-OVERVIEW`. This file covers components, states, and interaction patterns.)
+(Reflects StackDrove HRMS Branding & UI Style Guide Version 1.0)
 
 ## 1. Core Components
 
 **Buttons**
-- Primary: solid `--nx-primary`, white text, `--nx-radius-sm`, 10px/16px padding, hover darkens to `--nx-primary-dark`
-- Secondary: white bg, `--nx-border` outline, `--nx-text-primary` text
-- Danger: outline red, fills solid on hover (used for Reject/Delete)
-- Icon-only buttons: 32px square, ghost style, tooltip on hover
+- Primary: solid Royal Blue `--sd-primary` (`#2563EB`), white text, `--sd-radius-md` (10px), 9px/18px padding, hover darkens to `#1D4ED8`
+- Secondary: white bg (`#FFFFFF`), `--sd-border` (`#E5E7EB`) outline, `--sd-text-primary` (`#232D3C`) text
+- Destructive: solid Danger Red (`#DC2626`), fills with hover to `#B91C1C` (used for Reject / Delete / Cancel)
+- Success: Bright Green (`#22C55E`), used only for semantically positive actions
+- Icon-only buttons: 36px circular or rounded, subtle border, ghost hover
 
-**Status Pills** (used everywhere — leave, expense, letters, resignation status)
+**Status Pills** (Strictly adhering to Section 7 Status Semantics)
 ```css
-.pill{padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600}
-.pill-pending{background:#FEF3C7;color:#92400E}
-.pill-approved{background:#DCFCE7;color:#166534}
-.pill-rejected{background:#FEE2E2;color:#991B1B}
-.pill-cancelled{background:#F3F4F6;color:#6B7280}
+.pill { padding: 3px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; line-height: 1.2; text-transform: capitalize; }
+.pill-approved, .pill-present, .pill-active { background: #DCFCE7; color: #15803D; } /* #22C55E Green */
+.pill-pending, .pill-review { background: #EFF6FF; color: #1D4ED8; }                 /* #2563EB Royal Blue */
+.pill-draft, .pill-neutral { background: #F1F5F9; color: #475569; }                  /* #64748B Gray */
+.pill-warning, .pill-late, .pill-halfday { background: #FEF3C7; color: #B45309; }    /* #D97706 Amber */
+.pill-rejected, .pill-absent, .pill-failed { background: #FEE2E2; color: #B91C1C; }  /* #DC2626 Red */
 ```
 
-**Cards**: `--nx-surface` bg, `--nx-shadow-card`, `--nx-radius-md`, 16–20px padding, optional top accent bar (2px, colored by category) for reward/appraisal cards.
+**Cards**: `--sd-surface` (`#FFFFFF`) bg, `--sd-border` (`#E5E7EB`) 1px border, `--sd-radius-md` to `--sd-radius-lg` (10–14px), 20–24px padding. No floating glassmorphism, gradients, or excessive shadows.
 
 **Tables**
-- Sticky header row, `--nx-bg` header background, uppercase 11px letter-spaced labels
-- Row height 48px (comfortable) / 36px (compact) — density toggle top-right of every table
-- Sortable column headers (chevron indicator)
-- Row actions in a trailing "⋯" kebab menu (Edit/View/Delete/etc.) to keep rows clean
-- Sticky first column for wide tables (e.g. employee name in attendance reports)
+- Sticky header row, `--sd-surface-subtle` (`#F8FAFC`) header background, uppercase 11px letter-spaced labels (`#64748B`)
+- Row height 44–48px (comfortable) / 36px (compact)
+- Sortable column headers
+- Trailing row action buttons / pills to keep rows scannable
+- Border dividers: 1px `--sd-border` (`#E5E7EB`)
 
 **Filter Bar** (consistent across all list modules)
 - Left-aligned: search input with icon (`🔍`), 280px wide, instant debounce filter

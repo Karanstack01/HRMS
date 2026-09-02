@@ -125,7 +125,7 @@ function openGiveRewardModal() {
 
     callApi('Api_Rewards_give', [payload], function() {
       closeAppModal();
-      showToast('Recognition published to Wall of Fame ✓', 'success');
+      showToast('Recognition published to Wall of Fame', 'success');
       loadModule_rewards();
     }, showToastError);
   });

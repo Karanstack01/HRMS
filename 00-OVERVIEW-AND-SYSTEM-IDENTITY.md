@@ -8,58 +8,91 @@ Prepared for: Antigravity (build agent) | Prepared by: Karan Singh Rawat (StackD
 
 | Item | Value |
 |---|---|
+| Company Name | **StackDrove** |
 | System Name | **StackDrove HRMS** |
-| Tagline | "One system. Every employee moment." |
+| Tagline | **"Build. Automate. Scale."** |
+| Business Positioning | Business Systems Engineering & Operations Automation |
 | Target Scale | 100–500 employee organizations, single or multi-location |
 | Stack | Google Apps Script (server), HTML Service (client), Google Sheets (DB), Drive (files), Gmail (mail), CacheService/PropertiesService (session & config) |
 | Architecture Style | Single Web App (doGet/doPost) + client-side SPA shell with hash-routed sections |
 | Auth Model | Google Workspace domain login (Session.getActiveUser) + internal Employee Directory role mapping |
 | Roles | Admin, HR, Manager, Employee (4-tier RBAC, extensible to 5 with "Finance" for payroll) |
 
-## 2. Brand & Visual Identity
+## 2. Brand & Visual Identity (Style Guide v1.0)
 
-**Color System (CSS variables)**
+**Color System (CSS Variables)**
 ```css
-:root{
-  --sd-primary:#4F46E5;      /* Indigo 600 - primary actions, active nav */
-  --sd-primary-dark:#3730A3;
-  --sd-primary-light:#EEF2FF;
-  --sd-secondary:#0EA5A4;    /* Teal - success/positive metrics */
-  --sd-accent:#F59E0B;       /* Amber - pending/attention states */
-  --sd-danger:#EF4444;       /* Rejections, errors, absent */
-  --sd-success:#22C55E;      /* Approved, present */
-  --sd-bg:#F6F7FB;           /* App background */
-  --sd-surface:#FFFFFF;      /* Cards, panels */
-  --sd-border:#E5E7EB;
-  --sd-text-primary:#111827;
-  --sd-text-secondary:#6B7280;
-  --sd-text-muted:#9CA3AF;
-  --sd-sidebar-bg:#111827;   /* Dark sidebar for premium feel */
-  --sd-sidebar-text:#D1D5DB;
-  --sd-sidebar-active:#4F46E5;
-  --sd-radius-sm:6px;
-  --sd-radius-md:10px;
-  --sd-radius-lg:16px;
-  --sd-shadow-card:0 1px 3px rgba(16,24,40,.08), 0 1px 2px rgba(16,24,40,.04);
-  --sd-shadow-modal:0 20px 25px -5px rgba(16,24,40,.15);
+:root {
+  /* Brand Tokens - Controlled Working Palette */
+  --sd-navy: #0B1635;             /* StackDrove Navy: Primary brand / sidebar / headings */
+  --sd-primary: #2563EB;          /* Royal Blue: Primary action / active states / links */
+  --sd-primary-dark: #1D4ED8;
+  --sd-primary-light: #EFF6FF;
+  --sd-accent-green: #22C55E;     /* Bright Green: Success / positive accent (use sparingly) */
+  --sd-accent-green-light: #DCFCE7;
+  
+  --sd-bg: #F5F7FA;               /* Soft Gray: Page background / section separation */
+  --sd-surface: #FFFFFF;          /* White: Primary surface / cards / forms */
+  --sd-surface-subtle: #F8FAFC;
+  --sd-border: #E5E7EB;           /* Border Gray: Borders / dividers */
+  --sd-border-light: #F1F5F9;
+  
+  --sd-text-primary: #232D3C;     /* Text Charcoal: Primary body text */
+  --sd-text-secondary: #4B5563;
+  --sd-text-muted: #64748B;       /* Muted Text: Secondary metadata */
+  
+  --sd-danger: #DC2626;           /* Danger Red: Errors / destructive actions */
+  --sd-warning: #D97706;          /* Warning Amber: Warnings / attention states */
+  --sd-success: #22C55E;          /* Bright Green: Approved / present */
+
+  /* Navigation Chrome */
+  --sd-sidebar-bg: #0B1635;       /* Dark Navy Surface */
+  --sd-sidebar-text: #94A3B8;
+  --sd-sidebar-text-active: #FFFFFF;
+  --sd-sidebar-active: #2563EB;   /* Royal Blue active navigation item */
+  --sd-sidebar-hover: rgba(255, 255, 255, 0.08);
+
+  /* Geometry & Rules */
+  --sd-radius-sm: 6px;
+  --sd-radius-md: 10px;           /* 10-14px card radius */
+  --sd-radius-lg: 12px;
+  --sd-radius-xl: 14px;
+  --sd-shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
 }
 ```
 
-**Typography**
-- Primary font: `Inter` (Google Fonts CDN) — UI text, tables, forms
-- Numeric/metric font: `Inter` with `font-variant-numeric: tabular-nums` for dashboards
-- Headings: Inter 600/700
-- Base size: 14px body, 13px table cells, 12px meta text, 20–28px section headers
-- Line-height: 1.5 body, 1.25 headings
+**Status Semantics**
+| Status Family | HEX | Rule |
+|---|---|---|
+| **Approved / Active / Present** | `#22C55E` | Green |
+| **Pending / In Review** | `#2563EB` | Blue |
+| **Draft / Neutral** | `#64748B` | Gray |
+| **Warning / Late / Action Needed** | `#D97706` | Amber |
+| **Rejected / Absent / Failed** | `#DC2626` | Red |
 
-**Iconography**: Lucide icons (inline SVG, no external runtime dependency issues in GAS — icons embedded as SVG strings in a shared `Icons.html` partial).
+**Typography**
+- Primary font stack: `Aptos, Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif`
+- Page Title: Display Bold 28–32px, color `#0B1635`
+- Section Heading: Bold 18–22px, color `#0B1635`
+- Card Heading: Semibold 14–16px, color `#0B1635` or `#232D3C`
+- Body Text: Regular 13–14px, color `#232D3C`
+- Table Data: Regular 12–13px, color `#232D3C`
+- Metadata: Regular 11–12px, color `#64748B`
+- Buttons: Semibold 13–14px
+
+**Non-Negotiable Brand Rules**
+- Official StackDrove logo used without distortion.
+- Navy (`#0B1635`) + Royal Blue (`#2563EB`) create the primary visual hierarchy.
+- Green is used as a controlled positive accent, not a dominant background.
+- White (`#FFFFFF`) cards and Soft Gray (`#F5F7FA`) canvas keep information clear and easy to scan.
+- No gradients, floating glassmorphism, or excessive shadows.
 
 **Layout Shell**
-- Fixed left sidebar: 240px expanded / 64px collapsed (icon-only), dark theme (`--sd-sidebar-bg`)
-- Top bar: 64px, breadcrumb + global search + notification bell + profile avatar dropdown
-- Content area: max-width 1440px, 24px gutter padding, responsive to 1024px (sidebar auto-collapses), 768px (sidebar becomes off-canvas drawer)
-- Card grid: CSS grid, `repeat(auto-fill, minmax(280px,1fr))`, 16px gap
-- Tables: sticky header, zebra-free (flat white rows, 1px `--sd-border` dividers), row hover `--sd-primary-light`, density toggle (comfortable/compact)
+- Fixed left sidebar: 250px, dark navy surface (`#0B1635`), light text, royal blue active item.
+- Top bar: 64px, `#FFFFFF` background, 1px `#E5E7EB` border, global search + live clock + quick punch + profile avatar.
+- Content area: Soft Gray (`#F5F7FA`) background, 24–32px consistent padding.
+- Cards: 10–14px radius, `#FFFFFF` surface, subtle `#E5E7EB` border, minimal shadow.
+- Tables: Sticky header, compact row heights, uppercase 11px letter-spaced headers, clear status badges.
 
 ## 3. Sidebar — Module List (in order)
 

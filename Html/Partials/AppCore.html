@@ -1,47 +1,42 @@
-<!-- Client-Side Core Controller, Hash Router, and API Bridge -->
-<div id="toast-container"></div>
-
 <script>
+  /**
+   * AppCore.html — Client-side State, API Dispatcher, Toast, Routing & Skeleton Helpers
+   */
   const App = {
-    user: null,
+    user: { fullName: 'Staff User', role: 'employee', department: 'Engineering' },
     nav: [],
-    orgName: 'StackDrove Technologies',
+    orgName: 'StackDrove',
     currency: 'INR',
-    punchStatus: { isPunchedIn: false },
+    punchStatus: { isPunchedIn: false, todayRecord: null },
     currentModule: 'dashboard'
   };
 
-  /**
-   * Universal API Bridge for calling server-side Google Apps Script methods
-   */
-  function callApi(functionName, args, onSuccess, onError) {
-    if (typeof google === 'undefined' || !google.script || !google.script.run) {
-      console.warn('[Mock / Dev Mode] callApi:', functionName, args);
-      return;
-    }
+  function callApi(functionName, args, onSuccess, onFailure) {
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+      let runner = google.script.run
+        .withSuccessHandler(function(response) {
+          if (response && response.success === false) {
+            if (typeof onFailure === 'function') onFailure(response.error);
+            else showToastError(response.error);
+          } else {
+            const data = (response && response.data !== undefined) ? response.data : response;
+            if (typeof onSuccess === 'function') onSuccess(data);
+          }
+        })
+        .withFailureHandler(function(error) {
+          if (typeof onFailure === 'function') onFailure(error);
+          else showToastError(error);
+        });
 
-    const runner = google.script.run
-      .withSuccessHandler(function(res) {
-        if (!res) {
-          if (onError) onError({ message: 'Empty response received from server.' });
-          return;
-        }
-        if (res.success) {
-          if (onSuccess) onSuccess(res.data);
-        } else {
-          if (onError) onError(res.error || { message: 'Server operation failed.' });
-          else showToastError(res.error);
-        }
-      })
-      .withFailureHandler(function(err) {
-        if (onError) onError(err);
-        else showToastError(err);
-      });
-
-    if (runner[functionName]) {
-      runner[functionName].apply(runner, args || []);
+      if (typeof runner[functionName] === 'function') {
+        runner[functionName].apply(runner, args || []);
+      } else {
+        console.error('API function not found on server:', functionName);
+        if (typeof onFailure === 'function') onFailure({ message: 'Function not found: ' + functionName });
+      }
     } else {
-      console.error('Apps Script method not found:', functionName);
+      console.warn('Google Apps Script environment not detected. Running offline.');
+      if (typeof onSuccess === 'function') onSuccess(null);
     }
   }
 
@@ -51,18 +46,19 @@
 
     const toast = document.createElement('div');
     toast.className = 'toast';
-    let icon = '✓';
+    let iconSvg = '<svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>';
     if (type === 'error') {
-      toast.style.background = '#EF4444';
-      icon = '✕';
+      toast.className = 'toast toast-error';
+      iconSvg = '<svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><circle cx="12" cy="12" r="10"/><line x1="15" x2="9" y1="9" y2="15"/><line x1="9" x2="15" y1="9" y2="15"/></svg>';
     } else if (type === 'warning') {
-      toast.style.background = '#F59E0B';
-      icon = '⚠️';
+      toast.className = 'toast toast-warning';
+      toast.style.borderLeftColor = '#D97706';
+      iconSvg = '<svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>';
     } else {
-      toast.style.background = '#0F172A';
+      toast.className = 'toast toast-success';
     }
 
-    toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+    toast.innerHTML = `<span style="display:flex;align-items:center;">${iconSvg}</span> <span>${message}</span>`;
     container.appendChild(toast);
 
     setTimeout(() => {
@@ -76,6 +72,54 @@
   function showToastError(err) {
     const msg = (err && err.message) ? err.message : String(err || 'An error occurred.');
     showToast(msg, 'error');
+  }
+
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar-wrapper');
+    if (!sidebar) return;
+    const isCollapsed = sidebar.classList.toggle('collapsed');
+    try {
+      localStorage.setItem('sd_sidebar_collapsed', isCollapsed ? '1' : '0');
+    } catch (e) {}
+  }
+
+  function applySidebarState() {
+    try {
+      if (localStorage.getItem('sd_sidebar_collapsed') === '1') {
+        const sidebar = document.getElementById('sidebar-wrapper');
+        if (sidebar) sidebar.classList.add('collapsed');
+      }
+    } catch (e) {}
+  }
+
+  function renderSkeletonCards(count, minHeight) {
+    let html = '';
+    for (let i = 0; i < (count || 4); i++) {
+      html += `
+        <div class="skeleton-card" style="min-height:${minHeight || 110}px;">
+          <div class="skeleton skeleton-title"></div>
+          <div class="skeleton skeleton-metric"></div>
+          <div class="skeleton skeleton-text" style="width:75%;"></div>
+        </div>
+      `;
+    }
+    return html;
+  }
+
+  function renderSkeletonRows(count) {
+    let html = '';
+    for (let i = 0; i < (count || 5); i++) {
+      html += `
+        <tr>
+          <td><div class="skeleton skeleton-text" style="width:120px;"></div></td>
+          <td><div class="skeleton skeleton-text" style="width:80px;"></div></td>
+          <td><div class="skeleton skeleton-text" style="width:90px;"></div></td>
+          <td><div class="skeleton skeleton-pill"></div></td>
+          <td><div class="skeleton skeleton-text" style="width:60px;"></div></td>
+        </tr>
+      `;
+    }
+    return html;
   }
 
   function newRequestId() {
@@ -96,6 +140,29 @@
       const href = el.getAttribute('href');
       el.classList.toggle('active', href === '#' + hash);
     });
+
+    // Update breadcrumb in topbar
+    const breadcrumbEl = document.getElementById('topbar-breadcrumb-module');
+    if (breadcrumbEl) {
+      const titles = {
+        dashboard: 'Dashboard',
+        directory: 'Directory',
+        attendance: 'Attendance & Timesheet',
+        leave: 'Leave & Time Off',
+        holidays: 'Holiday Calendar',
+        policies: 'Company Policies',
+        assets: 'Assets & Equipment',
+        rewards: 'Rewards & Recognition',
+        appraisals: 'My Appraisals',
+        travel: 'Travel & Expenses',
+        letters: 'My Letters',
+        payroll: 'My Payroll',
+        resignation: 'Resignation & Clearance',
+        profile: 'My Profile',
+        admin: 'Admin Console'
+      };
+      breadcrumbEl.textContent = titles[hash] || hash;
+    }
 
     // Hide all modules, show target module
     document.querySelectorAll('.module-container').forEach(el => {
@@ -123,30 +190,47 @@
   }
 
   function initApp() {
+    applySidebarState();
+    renderIconsInDOM();
+    handleRoute();
+
     callApi('getInitialAppData', [], function(data) {
-      App.user = data.user;
-      App.nav = data.nav;
-      App.orgName = data.orgName;
-      App.currency = data.currency;
-      App.punchStatus = data.punchStatus;
+      if (!data) return;
+      App.user = data.user || App.user;
+      App.nav = data.nav || App.nav;
+      App.orgName = data.orgName || App.orgName;
+      App.currency = data.currency || App.currency;
+      App.punchStatus = data.punchStatus || App.punchStatus;
 
       // Update User in Topbar & Sidebar
-      document.getElementById('topbar-user-name').textContent = data.user.fullName;
-      document.getElementById('topbar-user-role').textContent = data.user.role + ' • ' + (data.user.department || '');
-      document.getElementById('sidebar-org-name').textContent = data.orgName;
-
+      const nameEl = document.getElementById('topbar-user-name');
+      const roleEl = document.getElementById('topbar-user-role');
+      const orgEl = document.getElementById('sidebar-org-name');
       const avatar = document.getElementById('topbar-avatar');
-      if (data.user.photoUrl) {
-        avatar.innerHTML = `<img src="${data.user.photoUrl}" alt="${data.user.fullName}">`;
-      } else {
-        avatar.textContent = data.user.fullName.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+
+      if (nameEl && data.user) nameEl.textContent = data.user.fullName || 'Employee';
+      if (roleEl && data.user) roleEl.textContent = (data.user.role || 'Staff') + (data.user.department ? ' • ' + data.user.department : '');
+      if (orgEl && data.orgName) orgEl.textContent = data.orgName;
+
+      if (avatar && data.user) {
+        if (data.user.photoUrl) {
+          avatar.innerHTML = `<img src="${data.user.photoUrl}" alt="${data.user.fullName}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+        } else if (data.user.fullName) {
+          avatar.textContent = data.user.fullName.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+        }
       }
 
-      updatePunchButtonUI(data.punchStatus.isPunchedIn, data.punchStatus.todayRecord);
-      renderSidebarNav(data.nav);
+      if (data.punchStatus && typeof updatePunchButtonUI === 'function') {
+        updatePunchButtonUI(data.punchStatus.isPunchedIn, data.punchStatus.todayRecord);
+      }
+      if (typeof renderSidebarNav === 'function') {
+        renderSidebarNav(data.nav);
+      }
       renderIconsInDOM();
       handleRoute();
-    }, showToastError);
+    }, function(err) {
+      console.warn('Initial data load warning:', err);
+    });
   }
 
   document.addEventListener('DOMContentLoaded', initApp);

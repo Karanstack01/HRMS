@@ -3,45 +3,47 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StackDrove HRMS — Enterprise Workforce Suite</title>
-  <?!= include('Html/Partials/Styles'); ?>
+  <title>StackDrove HRMS — Build. Automate. Scale.</title>
+  <?!= include('Styles'); ?>
 </head>
 <body>
 
 <div id="app-root">
   <!-- Left Sidebar Navigation -->
-  <?!= include('Html/Partials/Sidebar'); ?>
+  <?!= include('Sidebar'); ?>
 
   <!-- Main Viewport Area -->
   <div id="main-content-wrapper">
     <!-- Topbar Header -->
-    <?!= include('Html/Partials/Topbar'); ?>
+    <?!= include('Topbar'); ?>
 
     <!-- Dynamic Module Mount Containers -->
     <main id="module-viewport">
-      <?!= include('Html/Modules/Dashboard'); ?>
-      <?!= include('Html/Modules/Directory'); ?>
-      <?!= include('Html/Modules/Attendance'); ?>
-      <?!= include('Html/Modules/Leave'); ?>
-      <?!= include('Html/Modules/Holidays'); ?>
-      <?!= include('Html/Modules/Policies'); ?>
-      <?!= include('Html/Modules/Assets'); ?>
-      <?!= include('Html/Modules/Rewards'); ?>
-      <?!= include('Html/Modules/Appraisals'); ?>
-      <?!= include('Html/Modules/Travel'); ?>
-      <?!= include('Html/Modules/Letters'); ?>
-      <?!= include('Html/Modules/Payroll'); ?>
-      <?!= include('Html/Modules/Resignation'); ?>
-      <?!= include('Html/Modules/Profile'); ?>
-      <?!= include('Html/Modules/AdminConsole'); ?>
+      <div class="content-container">
+        <?!= include('Dashboard'); ?>
+        <?!= include('Directory'); ?>
+        <?!= include('Attendance'); ?>
+        <?!= include('Leave'); ?>
+        <?!= include('Holidays'); ?>
+        <?!= include('Policies'); ?>
+        <?!= include('Assets'); ?>
+        <?!= include('Rewards'); ?>
+        <?!= include('Appraisals'); ?>
+        <?!= include('Travel'); ?>
+        <?!= include('Letters'); ?>
+        <?!= include('Payroll'); ?>
+        <?!= include('Resignation'); ?>
+        <?!= include('Profile'); ?>
+        <?!= include('AdminConsole'); ?>
+      </div>
     </main>
   </div>
 </div>
 
 <!-- Global Modal and Icons -->
-<?!= include('Html/Partials/Modal'); ?>
-<?!= include('Html/Partials/Icons'); ?>
-<?!= include('Html/Partials/AppCore'); ?>
+<?!= include('Modal'); ?>
+<?!= include('Icons'); ?>
+<?!= include('AppCore'); ?>
 
 </body>
 </html>
