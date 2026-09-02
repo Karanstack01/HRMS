@@ -47,7 +47,7 @@ function renderPolicies(list) {
       <div>
         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
           <span class="pill pill-holiday">${p.category}</span>
-          ${p.mandatoryAck ? (p.isAcknowledged ? `<span class="pill pill-approved">✓ Acknowledged</span>` : `<span class="pill pill-danger">Action Required</span>`) : ''}
+          ${p.mandatoryAck ? (p.isAcknowledged ? `<span class="pill pill-approved">Acknowledged</span>` : `<span class="pill pill-danger">Action Required</span>`) : ''}
         </div>
         <h4 style="font-size:16px; font-weight:700; color:var(--sd-text-primary); margin-bottom:6px;">${p.title}</h4>
         <p style="font-size:13px; color:var(--sd-text-secondary); line-height:1.5; margin-bottom:14px;">${p.description || 'Official organizational handbook document.'}</p>
@@ -68,7 +68,7 @@ function renderPolicies(list) {
 
 function acknowledgePolicy(policyId) {
   callApi('Api_Policies_acknowledge', [policyId], function() {
-    showToast('Policy acknowledged and recorded in your compliance profile ✓', 'success');
+    showToast('Policy acknowledged and recorded in your compliance profile', 'success');
     loadModule_policies();
   }, showToastError);
 }
@@ -126,7 +126,7 @@ function openAddPolicyModal() {
 
     callApi('Api_Policies_create', [payload], function() {
       closeAppModal();
-      showToast('Policy published and broadcasted to team ✓', 'success');
+      showToast('Policy published and broadcasted to team', 'success');
       loadModule_policies();
     }, showToastError);
   });

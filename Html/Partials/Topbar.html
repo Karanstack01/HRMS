@@ -1,50 +1,79 @@
-<div id="topbar">
-  <!-- Search Bar -->
-  <div style="display: flex; align-items: center; gap: 10px; width: 340px;">
-    <div style="position: relative; width: 100%;">
-      <span class="icon-slot" data-icon="search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--sd-text-muted); pointer-events: none;"></span>
-      <input type="text" id="global-search-input" placeholder="Search employees, policies, letters..." class="form-control" style="padding-left: 36px; height: 38px; border-radius: 9999px; background: var(--sd-bg); font-size: 12.5px;" oninput="handleGlobalSearch(this.value)">
+<!-- Topbar Header - Crisp White Bar with Live Station and Global Actions -->
+<header id="topbar" style="height:64px; min-height:64px; max-height:64px; background:#FFFFFF; border-bottom:1px solid #E5E7EB; display:flex; align-items:center; justify-content:space-between; padding:0 28px; position:sticky; top:0; z-index:30; box-sizing:border-box;">
+  
+  <!-- Left: Sidebar Toggle & Module Breadcrumb Context -->
+  <div style="display:flex; align-items:center; gap:12px;">
+    <button type="button" class="sidebar-toggle-btn" id="btn-topbar-sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar width" aria-label="Toggle sidebar">
+      <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+        <path d="M9 3v18"></path>
+      </svg>
+    </button>
+    
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span style="font-size:13px; font-weight:500; color:#64748B;">StackDrove HRMS</span>
+      <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px;">
+        <path d="m9 18 6-6-6-6"></path>
+      </svg>
+      <span id="topbar-breadcrumb-module" style="font-size:14px; font-weight:700; color:#0B1635; text-transform:capitalize;">Dashboard</span>
     </div>
   </div>
 
-  <!-- Actions & Profile Info -->
-  <div style="display: flex; align-items: center; gap: 16px;">
-    <!-- Live Global Punch Button -->
+  <!-- Center & Right Action Elements -->
+  <div style="display:flex; align-items:center; gap:18px;">
+    <!-- Global Quick Search (320-420px per Section 6) -->
+    <div style="position:relative; width:320px;">
+      <span style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#64748B; pointer-events:none; display:flex; align-items:center;">
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.3-4.3"></path>
+        </svg>
+      </span>
+      <input type="text" id="global-search-input" placeholder="Search employees, policies, letters..." 
+             style="width:100%; height:38px; padding:0 16px 0 38px; border-radius:10px; background:#F5F7FA; border:1px solid #E5E7EB; font-size:13px; color:#232D3C; outline:none; transition:all 0.15s ease-out; box-sizing:border-box;"
+             oninput="handleGlobalSearch(this.value)">
+    </div>
+
+    <!-- Live Digital Clock with Semantic Green Dot -->
+    <div id="topbar-clock-box" style="display:flex; align-items:center; gap:8px; font-family:'JetBrains Mono',monospace;">
+      <span style="width:7px; height:7px; border-radius:50%; background:#22C55E; display:inline-block;"></span>
+      <span id="topbar-time" style="font-size:13.5px; font-weight:700; color:#0B1635;">--:--:--</span>
+    </div>
+
+    <!-- Quick Punch Station Button (Royal Blue #2563EB) -->
     <div id="topbar-punch-container">
-      <button id="btn-quick-punch" class="btn btn-sm btn-primary" onclick="triggerQuickPunch()" style="height: 38px; border-radius: 9999px; padding: 0 16px;">
-        <span class="icon-slot" data-icon="clock"></span>
+      <button id="btn-quick-punch" onclick="triggerQuickPunch()" 
+              style="display:inline-flex; align-items:center; gap:8px; height:38px; padding:0 18px; border-radius:10px; font-size:13px; font-weight:600; border:none; cursor:pointer; background:#2563EB; color:#FFFFFF; transition:all 0.15s ease-out; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px;">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
         <span id="punch-btn-label">Clock In</span>
       </button>
     </div>
 
-    <!-- Live Date & Clock Display -->
-    <div style="text-align: right; font-size: 12px; line-height: 1.2; display: none;" id="topbar-clock-box">
-      <div id="topbar-time" style="font-weight: 700; color: var(--sd-text-primary); font-family: 'JetBrains Mono', monospace;">00:00:00</div>
-      <div id="topbar-date" style="color: var(--sd-text-muted); font-size: 11px;">Loading date...</div>
-    </div>
-
-    <div style="height: 24px; width: 1px; background: var(--sd-border);"></div>
+    <!-- Divider -->
+    <div style="height:24px; width:1px; background:#E5E7EB;"></div>
 
     <!-- Active User Profile Pill -->
-    <div style="display: flex; align-items: center; gap: 10px; cursor: pointer;" onclick="navigateTo('profile')">
-      <div class="avatar" id="topbar-avatar">
+    <div style="display:flex; align-items:center; gap:10px; cursor:pointer; padding:4px 8px; border-radius:8px; transition:background 0.15s ease-out;" onclick="navigateTo('profile')" title="View profile">
+      <div class="avatar" id="topbar-avatar" style="width:34px; height:34px; border-radius:50%; background:#0B1635; color:#FFFFFF; font-weight:700; font-size:12.5px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
         SD
       </div>
-      <div style="text-align: left; line-height: 1.2;">
-        <div id="topbar-user-name" style="font-size: 13px; font-weight: 700; color: var(--sd-text-primary);">Loading...</div>
-        <div id="topbar-user-role" style="font-size: 11px; color: var(--sd-text-muted); text-transform: capitalize;">Staff</div>
+      <div style="text-align:left; line-height:1.2;">
+        <div id="topbar-user-name" style="font-size:13px; font-weight:700; color:#0B1635; max-width:130px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Staff User</div>
+        <div id="topbar-user-role" style="font-size:11px; color:#64748B; font-weight:500; text-transform:capitalize;">Employee</div>
       </div>
     </div>
+
   </div>
-</div>
+</header>
 
 <script>
   function updateTopbarClock() {
     const now = new Date();
     const timeEl = document.getElementById('topbar-time');
-    const dateEl = document.getElementById('topbar-date');
     if (timeEl) timeEl.textContent = now.toLocaleTimeString();
-    if (dateEl) dateEl.textContent = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   }
   setInterval(updateTopbarClock, 1000);
   updateTopbarClock();
@@ -55,23 +84,23 @@
     if (!btn || !label) return;
 
     if (isPunchedIn) {
-      btn.className = 'btn btn-sm btn-danger';
+      btn.style.background = '#DC2626'; // Danger Red
       label.textContent = 'Clock Out';
-      btn.title = todayRecord?.punchInTime ? `Punched in at ${new Date(todayRecord.punchInTime).toLocaleTimeString()}` : 'Click to clock out';
+      btn.title = todayRecord?.punchInTime ? `Clocked in at ${new Date(todayRecord.punchInTime).toLocaleTimeString()}` : 'Click to clock out';
     } else {
-      btn.className = 'btn btn-sm btn-primary';
+      btn.style.background = '#2563EB'; // Royal Blue
       label.textContent = 'Clock In';
-      btn.title = 'Click to record daily punch-in';
+      btn.title = 'Click to record punch-in';
     }
   }
 
   function triggerQuickPunch() {
-    const isPunchedIn = App.punchStatus.isPunchedIn;
+    const isPunchedIn = App.punchStatus && App.punchStatus.isPunchedIn;
     const action = isPunchedIn ? 'OUT' : 'IN';
     const reqId = newRequestId();
 
     const btn = document.getElementById('btn-quick-punch');
-    btn.disabled = true;
+    if (btn) btn.disabled = true;
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -85,18 +114,22 @@
 
   function executePunchCall(action, geo, reqId) {
     callApi('Api_Attendance_punch', [action, geo, reqId], function(res) {
-      document.getElementById('btn-quick-punch').disabled = false;
-      showToast(`Punch ${action} successfully recorded ✓`, 'success');
+      const btn = document.getElementById('btn-quick-punch');
+      if (btn) btn.disabled = false;
+      showToast(`Punch ${action} successfully recorded`, 'success');
       App.punchStatus.isPunchedIn = (action === 'IN');
       App.punchStatus.todayRecord = res;
       updatePunchButtonUI(App.punchStatus.isPunchedIn, res);
 
-      // Refresh current view if attendance or dashboard is open
+      if (typeof syncAttendancePunchBanner === 'function') {
+        syncAttendancePunchBanner();
+      }
       if (App.currentModule === 'attendance' || App.currentModule === 'dashboard') {
         loadModuleData(App.currentModule);
       }
     }, function(err) {
-      document.getElementById('btn-quick-punch').disabled = false;
+      const btn = document.getElementById('btn-quick-punch');
+      if (btn) btn.disabled = false;
       showToastError(err);
     });
   }
@@ -104,14 +137,15 @@
   function handleGlobalSearch(query) {
     const q = (query || '').toLowerCase().trim();
     if (!q) return;
-    // Route to directory if searching employees
     if (App.currentModule !== 'directory') {
       navigateTo('directory');
     }
     const filterInput = document.getElementById('dir-search-input');
     if (filterInput) {
       filterInput.value = q;
-      filterEmployeesList();
+      if (typeof filterEmployeesList === 'function') {
+        filterEmployeesList();
+      }
     }
   }
 </script>

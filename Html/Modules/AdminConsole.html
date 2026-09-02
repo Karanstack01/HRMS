@@ -165,13 +165,13 @@ function saveAdminSettings() {
   };
 
   callApi('Api_Admin_saveConfig', [payload], function() {
-    showToast('Global settings updated ✓', 'success');
+    showToast('Global settings updated', 'success');
   }, showToastError);
 }
 
 function reinstallTriggers() {
   callApi('Api_Admin_reinstallTriggers', [], function(res) {
-    showToast(`Triggers installed: ${res.installed.length} active cron routines ✓`, 'success');
+    showToast(`Triggers installed: ${res.installed.length} active cron routines`, 'success');
     loadModule_admin();
   }, showToastError);
 }
@@ -181,7 +181,7 @@ function runSystemBootstrap() {
 
   showToast('Initializing system tables & structures...', 'info');
   callApi('Api_Admin_initializeSystem', [], function(res) {
-    showToast(`System initialized with ${res.createdSheets.length} sheets ✓`, 'success');
+    showToast(`System initialized with ${res.createdSheets.length} sheets`, 'success');
     loadModule_admin();
   }, showToastError);
 }

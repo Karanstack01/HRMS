@@ -161,7 +161,7 @@ function generatePayrollDrafts() {
         </tr>
       `;
     }).join('');
-    showToast(`Drafts calculated for ${currentDrafts.length} employees ✓`, 'success');
+    showToast(`Drafts calculated for ${currentDrafts.length} employees`, 'success');
   }, showToastError);
 }
 
@@ -170,7 +170,7 @@ function publishPayrollBatch() {
 
   showToast('Generating official PDF payslips & dispatching emails...', 'info');
   callApi('Api_Payroll_publish', [currentDrafts], function(res) {
-    showToast(`Payroll published! Generated ${res.publishedCount} payslips ✓`, 'success');
+    showToast(`Payroll published! Generated ${res.publishedCount} payslips`, 'success');
     document.getElementById('pay-drafts-card').style.display = 'none';
     loadModule_payroll();
     switchPayrollTab('my');

@@ -105,7 +105,7 @@ function savePersonalProfile() {
   };
 
   callApi('Api_Profile_updatePersonal', [payload], function() {
-    showToast('Personal details updated ✓', 'success');
+    showToast('Personal details updated', 'success');
   }, showToastError);
 }
 
@@ -114,7 +114,7 @@ function saveBankDetails() {
   const ifsc = document.getElementById('prof-bank-ifsc').value;
 
   callApi('Api_Profile_updateBank', [acc, ifsc], function() {
-    showToast('Bank details submitted for verification ✓', 'success');
+    showToast('Bank details submitted for verification', 'success');
   }, showToastError);
 }
 
@@ -126,7 +126,7 @@ function saveAttendancePin() {
   }
 
   callApi('Api_Profile_updatePin', [pin], function() {
-    showToast('Attendance PIN updated ✓', 'success');
+    showToast('Attendance PIN updated', 'success');
     document.getElementById('prof-pin').value = '';
   }, showToastError);
 }

@@ -156,7 +156,7 @@ function submitAssetRequest() {
   const reason = document.getElementById('ast-req-reason').value;
 
   callApi('Api_Assets_request', [cat, reason], function() {
-    showToast('Equipment request submitted to IT/Admin ✓', 'success');
+    showToast('Equipment request submitted to IT/Admin', 'success');
     document.getElementById('ast-req-reason').value = '';
     switchAssetsTab('my');
   }, showToastError);
@@ -237,7 +237,7 @@ function openAssignModal(assetId) {
     if (!empId) return;
     callApi('Api_Assets_assign', [assetId, empId], function() {
       closeAppModal();
-      showToast('Asset assigned successfully ✓', 'success');
+      showToast('Asset assigned successfully', 'success');
       loadModule_assets();
     }, showToastError);
   });

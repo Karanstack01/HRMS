@@ -175,7 +175,7 @@ function submitTravelClaim() {
 
   callApi('Api_Travel_create', [payload, []], function() {
     btn.disabled = false;
-    showToast('Expense claim submitted for manager approval ✓', 'success');
+    showToast('Expense claim submitted for manager approval', 'success');
     document.getElementById('trv-purpose').value = '';
     document.getElementById('trv-amount').value = '';
     loadModule_travel();
@@ -188,7 +188,7 @@ function submitTravelClaim() {
 
 function actionExpense(requestId, action) {
   callApi('Api_Travel_action', [requestId, action], function() {
-    showToast(`Claim updated: ${action} ✓`, 'success');
+    showToast(`Claim updated: ${action}`, 'success');
     loadModule_travel();
   }, showToastError);
 }

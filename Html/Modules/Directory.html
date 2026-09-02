@@ -285,7 +285,7 @@ function openAddEmployeeModal() {
 
     callApi('Api_Directory_save', [payload], function(res) {
       closeAppModal();
-      showToast(`Employee ${res.fullName} (${res.empId}) created successfully ✓`, 'success');
+      showToast(`Employee ${res.fullName} (${res.empId}) created successfully`, 'success');
       loadModule_directory();
     }, showToastError);
   });
@@ -369,7 +369,7 @@ function openEditEmployeeModal(empId) {
 
     callApi('Api_Directory_save', [payload], function(res) {
       closeAppModal();
-      showToast(`Updated record for ${res.fullName} ✓`, 'success');
+      showToast(`Updated record for ${res.fullName}`, 'success');
       loadModule_directory();
     }, showToastError);
   });

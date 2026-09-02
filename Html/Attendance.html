@@ -1,237 +1,356 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StackDrove HRMS — Attendance Check-In</title>
-  <?!= include('Html/Partials/Styles'); ?>
-  <style>
-    body {
-      background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%);
-      color: #F8FAFC;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .kiosk-card {
-      background: #FFFFFF;
-      color: #0F172A;
-      border-radius: 24px;
-      padding: 40px 32px;
-      max-width: 480px;
-      width: 100%;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-      text-align: center;
-    }
-
-    .big-punch-btn {
-      width: 180px;
-      height: 180px;
-      border-radius: 50%;
-      font-size: 20px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      border: none;
-      cursor: pointer;
-      margin: 24px auto;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-    }
-
-    .big-punch-btn:hover {
-      transform: scale(1.05);
-    }
-
-    .big-punch-in {
-      background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
-      color: #FFFFFF;
-      box-shadow: 0 12px 30px rgba(34, 197, 94, 0.4);
-    }
-
-    .big-punch-out {
-      background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
-      color: #FFFFFF;
-      box-shadow: 0 12px 30px rgba(239, 68, 68, 0.4);
-    }
-
-    .punch-done {
-      background: #F1F5F9;
-      color: #64748B;
-      cursor: default;
-      box-shadow: none;
-    }
-  </style>
-</head>
-
-<body>
-
-  <div class="kiosk-card">
-    <div style="font-size:24px; font-weight:800; color:#0F172A; margin-bottom:4px;">
-      Stack<span style="color:#4F46E5;">Drove</span> HRMS
+<div id="module-attendance" class="module-container" style="display:none;">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Attendance & Time Tracking</h1>
+      <p class="page-subtitle">Daily clock-in logs, worked hours, team monitoring, and regularization requests.</p>
     </div>
-    <p style="font-size:13px; color:#64748B; margin-bottom:20px;">Daily Attendance Check-In Portal</p>
-
-    <!-- Mode Selector: SSO vs Emp ID / PIN -->
-    <div style="display:flex; justify-content:center; gap:8px; margin-bottom:20px;">
-      <button class="btn btn-secondary btn-sm" id="btn-mode-sso" onclick="setKioskMode('sso')">Workspace SSO</button>
-      <button class="btn btn-secondary btn-sm" id="btn-mode-pin" onclick="setKioskMode('pin')">Emp ID & PIN</button>
-    </div>
-
-    <!-- Emp ID / PIN Input Section -->
-    <div id="kiosk-pin-section"
-      style="display:none; text-align:left; margin-bottom:20px; background:#F8FAFC; padding:16px; border-radius:12px; border:1px solid #E2E8F0;">
-      <div class="form-group" style="margin-bottom:10px;">
-        <label class="form-label" style="font-size:12px;">Employee ID</label>
-        <input type="text" id="kiosk-empid" class="form-control" placeholder="SD-0001">
-      </div>
-      <div class="form-group" style="margin-bottom:0;">
-        <label class="form-label" style="font-size:12px;">Security PIN (or phone last 4)</label>
-        <input type="password" id="kiosk-pin" class="form-control" placeholder="••••" maxlength="6">
-      </div>
-    </div>
-
-    <!-- Active User Banner -->
-    <div id="kiosk-user-banner" style="margin-bottom:12px;">
-      <h3 style="font-size:18px; font-weight:700;" id="kiosk-emp-name">Loading Profile...</h3>
-      <p style="font-size:13px; color:#4F46E5; font-weight:600;" id="kiosk-emp-desig">Verifying session</p>
-    </div>
-
-    <!-- Live Clock -->
-    <div style="font-size:28px; font-weight:800; font-family:'Inter', monospace; color:#0F172A; margin:10px 0;"
-      id="live-clock">
-      00:00:00
-    </div>
-    <div style="font-size:12px; color:#64748B;" id="live-date"></div>
-
-    <!-- Big Punch Button -->
-    <button id="kiosk-punch-btn" class="big-punch-btn big-punch-in" onclick="executeKioskPunch()">
-      <span id="kiosk-punch-text">PUNCH IN</span>
-      <span style="font-size:12px; font-weight:500; opacity:0.9;" id="kiosk-punch-sub">Click to record</span>
-    </button>
-
-    <!-- Day Summary -->
-    <div id="kiosk-summary-box" style="margin-top:16px; font-size:13px; color:#475569;">
-      Today: <span id="kiosk-day-summary">No check-in yet</span>
-    </div>
-
-    <div style="margin-top:28px; border-top:1px solid #E2E8F0; padding-top:16px;">
-      <a href="<?!= ScriptApp.getService().getUrl() ?>"
-        style="color:#4F46E5; font-size:13px; text-decoration:none; font-weight:600;">
-        Open Full StackDrove HRMS Portal →
-      </a>
+    <div style="display:flex; gap:12px;">
+      <select id="att-year-picker" class="filter-select" onchange="loadAttendanceData()">
+        <option value="2026">2026</option>
+        <option value="2025">2025</option>
+      </select>
+      <select id="att-month-picker" class="filter-select" onchange="loadAttendanceData()">
+        <option value="1">January</option>
+        <option value="2">February</option>
+        <option value="3">March</option>
+        <option value="4">April</option>
+        <option value="5">May</option>
+        <option value="6">June</option>
+        <option value="7">July</option>
+        <option value="8">August</option>
+        <option value="9">September</option>
+        <option value="10">October</option>
+        <option value="11">November</option>
+        <option value="12">December</option>
+      </select>
     </div>
   </div>
 
-  <?!= include('Html/Partials/Icons'); ?>
-  <?!= include('Html/Partials/AppCore'); ?>
+  <!-- Live Clock & Punch Desk Banner -->
+  <div class="card" style="padding:22px 28px; margin-bottom:24px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:20px; background:var(--sd-surface); border:1px solid var(--sd-border); border-left:5px solid var(--sd-primary);">
+    <div>
+      <div style="font-size:11.5px; font-weight:700; color:var(--sd-text-muted); text-transform:uppercase; letter-spacing:0.8px;">Live Punch Station</div>
+      <div id="att-live-clock" style="font-size:28px; font-weight:800; color:var(--sd-navy); font-family:'JetBrains Mono',monospace; margin-top:2px;">00:00:00</div>
+      <div id="att-punch-status-note" style="font-size:13px; color:var(--sd-text-secondary); margin-top:2px;">Ready to record punch</div>
+    </div>
+    <div style="display:flex; align-items:center; gap:14px;">
+      <button id="att-main-punch-btn" class="btn btn-primary" onclick="triggerQuickPunch()" style="padding:11px 26px; font-size:14px; font-weight:600; border-radius:var(--sd-radius-md); box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px;">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <span id="att-main-punch-label">Clock In</span>
+      </button>
+    </div>
+  </div>
 
-  <script>
-    let currentMode = 'sso';
-    let kioskUser = null;
+  <!-- Sub-Tabs: My Attendance vs Team Attendance -->
+  <div style="display:flex; gap:16px; margin-bottom:20px; border-bottom:1px solid var(--sd-border); padding-bottom:12px;">
+    <button class="btn btn-secondary btn-sm active-tab" id="tab-att-my" onclick="switchAttTab('my')">My Timesheet</button>
+    <button class="btn btn-secondary btn-sm" id="tab-att-team" onclick="switchAttTab('team')" style="display:none;">Team Today</button>
+  </div>
 
-    function setKioskMode(mode) {
-      currentMode = mode;
-      document.getElementById('btn-mode-sso').classList.toggle('btn-primary', mode === 'sso');
-      document.getElementById('btn-mode-pin').classList.toggle('btn-primary', mode === 'pin');
-      document.getElementById('kiosk-pin-section').style.display = mode === 'pin' ? 'block' : 'none';
+  <!-- Section: My Timesheet -->
+  <div id="att-my-container">
+    <!-- Quick Metric Cards with Professional SVG Icons -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:24px;">
+      <div class="card" style="padding:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:11.5px; color:var(--sd-text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Present Days</span>
+          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="var(--sd-success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="m9 12 2 2 4-4"></path>
+          </svg>
+        </div>
+        <h3 style="font-size:26px; font-weight:800; color:var(--sd-success); margin-top:6px;" id="metric-att-present">0</h3>
+      </div>
+      
+      <div class="card" style="padding:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:11.5px; color:var(--sd-text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Half Days</span>
+          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="var(--sd-warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+        <h3 style="font-size:26px; font-weight:800; color:var(--sd-warning); margin-top:6px;" id="metric-att-halfday">0</h3>
+      </div>
+
+      <div class="card" style="padding:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:11.5px; color:var(--sd-text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Absent</span>
+          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="var(--sd-danger)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" x2="9" y1="9" y2="15"></line>
+            <line x1="9" x2="15" y1="9" y2="15"></line>
+          </svg>
+        </div>
+        <h3 style="font-size:26px; font-weight:800; color:var(--sd-danger); margin-top:6px;" id="metric-att-absent">0</h3>
+      </div>
+
+      <div class="card" style="padding:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:11.5px; color:var(--sd-text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Total Hours</span>
+          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="var(--sd-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;">
+            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+            <polyline points="16 7 22 7 22 13"></polyline>
+          </svg>
+        </div>
+        <h3 style="font-size:26px; font-weight:800; color:var(--sd-primary); margin-top:6px;" id="metric-att-hours">0h</h3>
+      </div>
+    </div>
+
+    <!-- Calendar Month View -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Monthly Attendance Grid</h3>
+        <div style="display:flex; align-items:center; gap:16px; font-size:12px; font-weight:500;">
+          <span style="display:flex; align-items:center; gap:6px;"><span style="width:8px; height:8px; background:var(--sd-success); border-radius:50%;"></span> Present</span>
+          <span style="display:flex; align-items:center; gap:6px;"><span style="width:8px; height:8px; background:var(--sd-warning); border-radius:50%;"></span> Half-Day</span>
+          <span style="display:flex; align-items:center; gap:6px;"><span style="width:8px; height:8px; background:var(--sd-danger); border-radius:50%;"></span> Absent</span>
+          <span style="display:flex; align-items:center; gap:6px;"><span style="width:8px; height:8px; background:var(--sd-primary); border-radius:50%;"></span> Holiday</span>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:8px; text-align:center; font-weight:600; font-size:12px; color:var(--sd-text-muted); margin-bottom:8px;">
+        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+      </div>
+      <div id="att-calendar-grid" style="display:grid; grid-template-columns:repeat(7, 1fr); gap:8px;">
+        <!-- Days or Skeleton rendered via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Section: Team Today -->
+  <div id="att-team-container" style="display:none;" class="card">
+    <div class="card-header">
+      <h3 class="card-title">Team Attendance Status (Today)</h3>
+    </div>
+    <div class="table-container" style="border:none; box-shadow:none;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Department</th>
+            <th>Status</th>
+            <th>Check In</th>
+            <th>Check Out</th>
+            <th>Worked Hours</th>
+          </tr>
+        </thead>
+        <tbody id="att-team-table-tbody">
+          <!-- Populated via JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+let myAttendanceData = null;
+
+function updateAttLiveClock() {
+  const el = document.getElementById('att-live-clock');
+  if (el) {
+    el.textContent = new Date().toLocaleTimeString();
+  }
+}
+setInterval(updateAttLiveClock, 1000);
+
+function loadModule_attendance() {
+  const d = new Date();
+  const ySelect = document.getElementById('att-year-picker');
+  const mSelect = document.getElementById('att-month-picker');
+  if (ySelect && !ySelect.value) ySelect.value = String(d.getFullYear());
+  if (mSelect && !mSelect.value) mSelect.value = String(d.getMonth() + 1);
+
+  const user = App.user;
+  if (user && (user.role === 'manager' || user.role === 'hr' || user.role === 'admin')) {
+    const teamTab = document.getElementById('tab-att-team');
+    if (teamTab) teamTab.style.display = 'inline-flex';
+  }
+
+  updateAttLiveClock();
+  syncAttendancePunchBanner();
+  loadAttendanceData();
+}
+
+function syncAttendancePunchBanner() {
+  const isPunchedIn = App.punchStatus && App.punchStatus.isPunchedIn;
+  const todayRec = App.punchStatus && App.punchStatus.todayRecord;
+  const btn = document.getElementById('att-main-punch-btn');
+  const label = document.getElementById('att-main-punch-label');
+  const note = document.getElementById('att-punch-status-note');
+
+  if (!btn || !label) return;
+
+  if (isPunchedIn) {
+    btn.className = 'btn btn-danger';
+    label.textContent = 'Clock Out';
+    if (note) {
+      const inTime = todayRec && todayRec.punchInTime ? new Date(todayRec.punchInTime).toLocaleTimeString() : '';
+      note.textContent = inTime ? `Active session started at ${inTime}` : 'You are currently clocked in';
+    }
+  } else {
+    btn.className = 'btn btn-primary';
+    label.textContent = 'Clock In';
+    if (note) {
+      note.textContent = 'Not clocked in for today yet';
+    }
+  }
+}
+
+function loadAttendanceData() {
+  const year = Number(document.getElementById('att-year-picker')?.value) || new Date().getFullYear();
+  const month = Number(document.getElementById('att-month-picker')?.value) || (new Date().getMonth() + 1);
+
+  // Show calendar skeleton placeholder while loading
+  const mount = document.getElementById('att-calendar-grid');
+  if (mount) {
+    let skel = '';
+    for (let i = 0; i < 35; i++) {
+      skel += `<div class="skeleton" style="height:76px; border-radius:8px;"></div>`;
+    }
+    mount.innerHTML = skel;
+  }
+
+  callApi('Api_Attendance_getMy', [year, month], function(res) {
+    myAttendanceData = res;
+    if (res && res.stats) {
+      document.getElementById('metric-att-present').textContent = res.stats.presentCount;
+      document.getElementById('metric-att-halfday').textContent = res.stats.halfDayCount;
+      document.getElementById('metric-att-absent').textContent = res.stats.absentCount;
+      document.getElementById('metric-att-hours').textContent = res.stats.totalHours + 'h';
+    }
+    renderAttendanceCalendar(year, month, res.records || []);
+    syncAttendancePunchBanner();
+  }, showToastError);
+}
+
+function renderAttendanceCalendar(year, month, records) {
+  const mount = document.getElementById('att-calendar-grid');
+  if (!mount) return;
+
+  const firstDay = new Date(year, month - 1, 1).getDay();
+  const totalDays = new Date(year, month, 0).getDate();
+  const recordMap = {};
+  records.forEach(r => {
+    recordMap[r.date] = r;
+  });
+
+  let html = '';
+  // Empty offset days
+  for (let i = 0; i < firstDay; i++) {
+    html += `<div style="height:76px; background:var(--sd-surface-subtle); border-radius:8px; opacity:0.4;"></div>`;
+  }
+
+  // Days of month
+  for (let d = 1; d <= totalDays; d++) {
+    const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const rec = recordMap[dateStr];
+    const dayOfWeek = new Date(year, month - 1, d).getDay();
+    const isWknd = (dayOfWeek === 0 || dayOfWeek === 6);
+
+    let statusClass = isWknd ? 'pill-weekend' : 'pill-absent';
+    let statusLabel = isWknd ? 'Weekend' : 'Absent';
+    let hoursText = '';
+
+    if (rec) {
+      statusLabel = rec.status;
+      if (rec.status === 'Present') statusClass = 'pill-present';
+      else if (rec.status === 'Half-Day') statusClass = 'pill-halfday';
+      else if (rec.status === 'On-Leave') statusClass = 'pill-leave';
+      else if (rec.status === 'Holiday') statusClass = 'pill-holiday';
+
+      if (rec.workedHours) hoursText = `${rec.workedHours}h`;
     }
 
-    function updateLiveClock() {
-      const now = new Date();
-      document.getElementById('live-clock').textContent = now.toLocaleTimeString();
-      document.getElementById('live-date').textContent = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    html += `
+      <div style="min-height:76px; background:var(--sd-surface); border:1px solid var(--sd-border); border-radius:8px; padding:8px 10px; display:flex; flex-direction:column; justify-content:space-between; cursor:pointer; transition:var(--sd-transition);" onclick="openDayDetail('${dateStr}')">
+        <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700;">
+          <span style="color:var(--sd-navy);">${d}</span>
+          <span style="font-size:10px; color:var(--sd-text-muted); font-family:'JetBrains Mono',monospace;">${hoursText}</span>
+        </div>
+        <div style="margin-top:6px;">
+          <span class="pill ${statusClass}" style="font-size:9.5px; padding:2px 6px;">${statusLabel}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  mount.innerHTML = html;
+}
+
+function openDayDetail(dateStr) {
+  const rec = myAttendanceData?.records?.find(r => r.date === dateStr);
+  const bodyHtml = `
+    <div style="padding:6px 0;">
+      <p style="font-size:13.5px; margin-bottom:12px;"><strong>Date:</strong> ${dateStr}</p>
+      <p style="font-size:13.5px; margin-bottom:8px;"><strong>Status:</strong> <span class="pill pill-${(rec?.status || 'absent').toLowerCase()}">${rec?.status || 'No Punch'}</span></p>
+      <p style="font-size:13.5px; margin-bottom:8px;"><strong>Punch In:</strong> ${rec?.punchInTime ? new Date(rec.punchInTime).toLocaleTimeString() : '—'}</p>
+      <p style="font-size:13.5px; margin-bottom:8px;"><strong>Punch Out:</strong> ${rec?.punchOutTime ? new Date(rec.punchOutTime).toLocaleTimeString() : '—'}</p>
+      <p style="font-size:13.5px; margin-bottom:16px;"><strong>Worked Hours:</strong> ${rec?.workedHours || 0} hrs</p>
+
+      ${(!rec || rec.status === 'Absent' || rec.status === 'Half-Day') ? `
+        <div style="margin-top:16px; border-top:1px solid var(--sd-border); padding-top:14px;">
+          <label class="form-label">Missed punch? Request Regularization</label>
+          <textarea id="att-reg-reason" class="form-control" placeholder="Explain reason for missing clock-in/out..."></textarea>
+        </div>
+      ` : ''}
+    </div>
+  `;
+
+  const showRegAction = (!rec || rec.status === 'Absent' || rec.status === 'Half-Day');
+  showAppModal(`Timesheet Entry: ${dateStr}`, bodyHtml, showRegAction ? 'Submit Regularization' : null, function() {
+    const reason = document.getElementById('att-reg-reason')?.value;
+    if (!reason) {
+      showToast('Please provide a reason.', 'warning');
+      return;
     }
-    setInterval(updateLiveClock, 1000);
-    updateLiveClock();
+    callApi('Api_Attendance_requestRegularization', [rec?.recordId || dateStr, reason], function() {
+      closeAppModal();
+      showToast('Regularization request submitted to your manager', 'success');
+      loadAttendanceData();
+    }, showToastError);
+  });
+}
 
-    document.addEventListener('DOMContentLoaded', function () {
-      setKioskMode('sso');
-      loadKioskStatus();
-    });
+function switchAttTab(tab) {
+  const isMy = tab === 'my';
+  document.getElementById('tab-att-my').classList.toggle('active-tab', isMy);
+  document.getElementById('tab-att-team').classList.toggle('active-tab', !isMy);
+  document.getElementById('att-my-container').style.display = isMy ? 'block' : 'none';
+  document.getElementById('att-team-container').style.display = !isMy ? 'block' : 'none';
 
-    function loadKioskStatus() {
-      callApi('Api_Attendance_getMy', [], function (res) {
-        if (res && res.today) {
-          const r = res.today;
-          const btn = document.getElementById('kiosk-punch-btn');
-          const text = document.getElementById('kiosk-punch-text');
-          const sub = document.getElementById('kiosk-punch-sub');
-          const summary = document.getElementById('kiosk-day-summary');
+  if (!isMy) {
+    loadTeamAttendance();
+  }
+}
 
-          if (r.punchInTime && !r.punchOutTime) {
-            btn.className = 'big-punch-btn big-punch-out';
-            text.textContent = 'PUNCH OUT';
-            sub.textContent = `In at ${new Date(r.punchInTime).toLocaleTimeString()}`;
-            summary.textContent = `Punched in at ${new Date(r.punchInTime).toLocaleTimeString()}`;
-            App.punchStatus.isPunchedIn = true;
-          } else if (r.punchInTime && r.punchOutTime) {
-            btn.className = 'big-punch-btn punch-done';
-            btn.disabled = true;
-            text.textContent = 'COMPLETED ✓';
-            sub.textContent = `${r.workedHours || 0} hrs worked`;
-            summary.textContent = `Punched in: ${new Date(r.punchInTime).toLocaleTimeString()} | Out: ${new Date(r.punchOutTime).toLocaleTimeString()} (${r.workedHours}h)`;
-          }
-        }
-      });
+function loadTeamAttendance() {
+  const tbody = document.getElementById('att-team-table-tbody');
+  if (tbody) {
+    tbody.innerHTML = renderSkeletonRows(4);
+  }
 
-      // Resolve user info
-      callApi('Api_Directory_list', [], function (list) {
-        if (list && list.length) {
-          const me = list[0]; // Active caller
-          document.getElementById('kiosk-emp-name').textContent = me.fullName;
-          document.getElementById('kiosk-emp-desig').textContent = `${me.designation} • ${me.department}`;
-        }
-      });
+  callApi('Api_Attendance_getTeam', [], function(teamList) {
+    if (!tbody) return;
+
+    if (!teamList || !teamList.length) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--sd-text-muted);">No direct reports found.</td></tr>`;
+      return;
     }
 
-    function executeKioskPunch() {
-      const isPunchedIn = App.punchStatus.isPunchedIn;
-      const action = isPunchedIn ? 'OUT' : 'IN';
-      const reqId = newRequestId();
-
-      let empIdOverride = null;
-      let pin = null;
-      if (currentMode === 'pin') {
-        empIdOverride = document.getElementById('kiosk-empid')?.value;
-        pin = document.getElementById('kiosk-pin')?.value;
-        if (!empIdOverride) {
-          showToast('Please enter your Employee ID', 'warning');
-          return;
-        }
-      }
-
-      const btn = document.getElementById('kiosk-punch-btn');
-      btn.disabled = true;
-
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          pos => postPunch(action, `${pos.coords.latitude},${pos.coords.longitude}`, reqId, empIdOverride, pin),
-          () => postPunch(action, 'Office Device', reqId, empIdOverride, pin)
-        );
-      } else {
-        postPunch(action, 'Web Kiosk', reqId, empIdOverride, pin);
-      }
-    }
-    // hello testing
-    function postPunch(action, geo, reqId, empIdOverride, pin) {
-      callApi('Api_Attendance_punch', [action, geo, reqId, empIdOverride, pin], function (res) {
-        showToast(`Punch ${action} recorded successfully ✓`, 'success');
-        loadKioskStatus();
-      }, function (err) {
-        document.getElementById('kiosk-punch-btn').disabled = false;
-        showToastError(err);
-      });
-    }
-  </script>
-</body>
-
-</html>
+    tbody.innerHTML = teamList.map(m => `
+      <tr>
+        <td><strong>${m.fullName}</strong> <code style="font-size:11px; color:var(--sd-text-muted);">(${m.empId})</code></td>
+        <td>${m.department || '—'}</td>
+        <td><span class="pill pill-${(m.attendance.status || 'absent').toLowerCase()}">${m.attendance.status || 'Absent'}</span></td>
+        <td>${m.attendance.punchInTime ? new Date(m.attendance.punchInTime).toLocaleTimeString() : '—'}</td>
+        <td>${m.attendance.punchOutTime ? new Date(m.attendance.punchOutTime).toLocaleTimeString() : '—'}</td>
+        <td><strong>${m.attendance.workedHours || 0} hrs</strong></td>
+      </tr>
+    `).join('');
+  }, showToastError);
+}
+</script>
