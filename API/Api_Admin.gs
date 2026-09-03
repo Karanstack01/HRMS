@@ -64,3 +64,32 @@ function Api_Admin_reinstallTriggers() {
     return fail_('ERROR', e.message);
   }
 }
+
+function Api_Admin_saveLogo(logoDataUrl) {
+  try {
+    const user = Auth.requireRole_(['admin', 'hr']);
+    if (!logoDataUrl) return fail_('VALIDATION_ERROR', 'Logo data URL required.');
+    
+    // Save to ScriptProperties
+    PropertiesService.getScriptProperties().setProperty('COMPANY_LOGO_DATA_URL', logoDataUrl);
+    Config.set('COMPANY_LOGO_URL', logoDataUrl);
+    logAudit_(user.empId, 'ADMIN_LOGO_UPDATE', 'Branding', 'LOGO', '', {}, { logoUpdated: true });
+    return ok_({ saved: true });
+  } catch (e) {
+    logError_(e, 'Api_Admin_saveLogo');
+    return fail_('ERROR', e.message);
+  }
+}
+
+function Api_Admin_resetLogo() {
+  try {
+    const user = Auth.requireRole_(['admin', 'hr']);
+    PropertiesService.getScriptProperties().deleteProperty('COMPANY_LOGO_DATA_URL');
+    Config.set('COMPANY_LOGO_URL', '');
+    logAudit_(user.empId, 'ADMIN_LOGO_RESET', 'Branding', 'LOGO', '', {}, { logoReset: true });
+    return ok_({ reset: true });
+  } catch (e) {
+    logError_(e, 'Api_Admin_resetLogo');
+    return fail_('ERROR', e.message);
+  }
+}

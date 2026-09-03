@@ -74,7 +74,7 @@ function Api_Letters_generate(letterId) {
       .setName(`${letter.type}_${emp.fullName.replace(/\s+/g, '_')}_${letterNumber.replace(/\//g, '-')}.pdf`);
 
     let folder;
-    const folderId = Config.getFolderId('LETTERS');
+    const folderId = typeof Config.getFolderId === 'function' ? Config.getFolderId('LETTERS') : Config.get('DRIVE_FOLDER_LETTERS');
     if (folderId) {
       try { folder = DriveApp.getFolderById(folderId); } catch (_) {}
     }
@@ -147,7 +147,7 @@ function generateLetterDocumentHtml_(emp, type, letterNumber, orgName) {
       <meta charset="utf-8">
       <style>
         body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #111827; line-height: 1.6; }
-        .header { border-bottom: 2px solid #4F46E5; padding-bottom: 16px; margin-bottom: 30px; display: flex; justify-content: space-between; }
+        .header { border-bottom: 2px solid #2563EB; padding-bottom: 16px; margin-bottom: 30px; display: flex; justify-content: space-between; }
         .company-name { font-size: 22px; font-weight: bold; color: #111827; }
         .doc-title { font-size: 18px; font-weight: bold; text-align: center; margin: 30px 0 20px 0; text-transform: uppercase; text-decoration: underline; color: #1F2937; }
         .meta-table { width: 100%; margin-bottom: 24px; font-size: 13px; }

@@ -19,20 +19,20 @@ var MailTemplates = (function() {
         <style>
           body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #F8FAFC; margin: 0; padding: 20px; color: #1E293B; line-height: 1.6; }
           .wrapper { max-width: 600px; margin: 0 auto; background: #FFFFFF; border-radius: 12px; overflow: hidden; border: 1px solid #E2E8F0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-          .header { background: linear-gradient(135deg, #1E1B4B 0%, #312E81 100%); padding: 28px 24px; text-align: center; color: #FFFFFF; }
+          .header { background: linear-gradient(135deg, #0B1635 0%, #2563EB 100%); padding: 28px 24px; text-align: center; color: #FFFFFF; }
           .header h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
           .header p { margin: 4px 0 0 0; font-size: 13px; color: #C7D2FE; }
           .body { padding: 32px 28px; }
           .card-box { background: #F1F5F9; border-radius: 8px; padding: 16px; margin: 20px 0; font-size: 13.5px; }
-          .btn-primary { display: inline-block; background: #4F46E5; color: #FFFFFF !important; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; font-size: 14px; margin-top: 16px; }
+          .btn-primary { display: inline-block; background: #2563EB; color: #FFFFFF !important; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; font-size: 14px; margin-top: 16px; }
           .footer { background: #F8FAFC; padding: 20px 24px; text-align: center; font-size: 12px; color: #64748B; border-top: 1px solid #E2E8F0; }
-          .footer a { color: #4F46E5; text-decoration: none; }
+          .footer a { color: #2563EB; text-decoration: none; }
         </style>
       </head>
       <body>
         <div class="wrapper">
           <div class="header">
-            <h1>Stack<span style="color:#818CF8;">Drove</span> HRMS</h1>
+            <h1>Stack<span style="color:#2563EB;">Drove</span> HRMS</h1>
             <p>${orgName}</p>
           </div>
           <div class="body">

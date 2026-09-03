@@ -1,396 +1,911 @@
 <div id="module-directory" class="module-container" style="display:none;">
-  <div class="page-header">
+  <!-- Page Header matching StackDrove standard -->
+  <div class="page-head">
     <div>
-      <h1 class="page-title">Employee Directory</h1>
-      <p class="page-subtitle">Search team members, browse departments, view reporting lines, and access org chart.</p>
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <span>StackDrove HRMS</span>
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><path d="m9 18 6-6-6-6"></path></svg>
+        <span class="current">Directory</span>
+      </nav>
+      <h1>Employee Directory</h1>
+      <p id="dir-sub-heading">Browse team members, view profiles, inspect reporting lines, and access org hierarchy.</p>
     </div>
-    <div style="display:flex; gap:10px;">
-      <div style="display:flex; background:var(--sd-surface); border:1px solid var(--sd-border); border-radius:var(--sd-radius-md); overflow:hidden;">
-        <button class="btn btn-sm btn-secondary" id="btn-view-grid" onclick="switchDirectoryView('grid')" style="border-radius:0; border:none;">
-          <span class="icon-slot" data-icon="grid"></span>
+    
+    <div class="head-actions">
+      <!-- Grid / Table View Switcher -->
+      <div class="segmented" role="tablist" aria-label="Directory view mode" style="margin:0;">
+        <button type="button" class="active" id="btn-view-grid" onclick="switchDirectoryView('grid')" title="Grid View">
+          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+          <span style="font-size:12.5px; font-weight:600;">Grid</span>
         </button>
-        <button class="btn btn-sm btn-secondary" id="btn-view-table" onclick="switchDirectoryView('table')" style="border-radius:0; border:none;">
-          <span class="icon-slot" data-icon="list"></span>
+        <button type="button" id="btn-view-table" onclick="switchDirectoryView('table')" title="Table View">
+          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>
+          <span style="font-size:12.5px; font-weight:600;">Table</span>
         </button>
       </div>
-      <button class="btn btn-secondary btn-sm" onclick="openOrgChartModal()">
-        <span class="icon-slot" data-icon="users"></span>
-        <span>Org Chart</span>
+
+      <!-- Org Chart Visual Hierarchy Trigger -->
+      <button class="button button-secondary" type="button" id="btn-open-org-chart" onclick="openOrgChartModal()" title="View Visual Org Chart">
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Org Tree
       </button>
-      <button class="btn btn-primary btn-sm" id="btn-add-employee" onclick="openAddEmployeeModal()" style="display:none;">
-        <span class="icon-slot" data-icon="plus"></span>
+
+      <!-- Add Employee Primary Action -->
+      <button class="button button-primary" type="button" id="btn-add-employee" onclick="openAddEmployeeModal()">
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
         <span>Add Employee</span>
       </button>
     </div>
   </div>
 
-  <!-- Filters & Search Bar -->
-  <div style="display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap;">
-    <div style="flex:1; min-width:240px; position:relative;">
-      <span class="icon-slot" data-icon="search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--sd-text-muted);"></span>
-      <input type="text" id="dir-search-input" class="form-control" placeholder="Search by name, email, department..." style="padding-left:36px;" oninput="filterEmployeesList()">
+  <!-- Search & Filter Controls Bar -->
+  <div style="background:var(--sd-surface); border:1px solid var(--sd-border); border-radius:var(--sd-radius-lg); padding:16px 18px; margin-bottom:20px; box-shadow:var(--sd-shadow-card);">
+    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+      
+      <!-- Live Search Box -->
+      <div style="flex:1; min-width:260px; position:relative;">
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:var(--sd-text-muted); pointer-events:none;">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+        </svg>
+        <input type="text" id="dir-search-input" class="form-control" placeholder="Search by name, email, employee ID, designation..." style="padding-left:36px; padding-right:32px;" oninput="handleSearchInputChange()">
+        <button type="button" id="btn-clear-search" onclick="clearDirectorySearch()" style="display:none; position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--sd-text-muted); cursor:pointer; padding:2px;" title="Clear search">✕</button>
+      </div>
+
+      <!-- Department Selector -->
+      <div style="min-width:180px;">
+        <select id="dir-dept-filter" class="filter-select" onchange="filterEmployeesList()" aria-label="Filter by department">
+          <option value="">All Departments</option>
+        </select>
+      </div>
+
+      <!-- Status Selector -->
+      <div style="min-width:170px;">
+        <select id="dir-status-filter" class="filter-select" onchange="filterEmployeesList()" aria-label="Filter by employment status">
+          <option value="active">Active Personnel</option>
+          <option value="all">All Personnel</option>
+          <option value="on-notice">On Notice</option>
+          <option value="resigned">Resigned / Former</option>
+        </select>
+      </div>
+
+      <!-- Live Filter Counter Badge & Refresh Action -->
+      <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+        <span id="dir-results-counter" class="pill pill-pending" style="font-size:12px;">Syncing…</span>
+        <button id="btn-reset-filters" class="button button-ghost button-sm" type="button" onclick="resetDirectoryFilters()" style="display:none;">Reset</button>
+        <button class="button button-ghost button-sm" type="button" onclick="loadModule_directory()" title="Re-sync with Sheet">
+          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+        </button>
+      </div>
     </div>
-    <select id="dir-dept-filter" class="filter-select" onchange="filterEmployeesList()">
-      <option value="">All Departments</option>
-    </select>
-    <select id="dir-status-filter" class="filter-select" onchange="filterEmployeesList()">
-      <option value="active">Active Personnel</option>
-      <option value="all">All Records</option>
-      <option value="on-notice">On Notice</option>
-      <option value="resigned">Resigned / Former</option>
-    </select>
   </div>
 
-  <!-- View A: Grid View -->
-  <div id="dir-grid-view" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px;">
-    <!-- Rendered via JS -->
+  <!-- View A: Grid View (Modern Interactive Cards) -->
+  <div id="dir-grid-view" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:18px;">
+    <!-- Rendered dynamically via JS -->
   </div>
 
-  <!-- View B: Table View -->
+  <!-- View B: Table View (Data Table) -->
   <div id="dir-table-view" class="table-container" style="display:none;">
     <table class="data-table">
       <thead>
         <tr>
-          <th>Employee</th>
-          <th>Designation</th>
-          <th>Department</th>
-          <th>Location</th>
-          <th>Work Mode</th>
-          <th>Status</th>
-          <th style="text-align:right;">Actions</th>
+          <th scope="col" style="min-width:240px;">Employee</th>
+          <th scope="col">Designation</th>
+          <th scope="col">Department</th>
+          <th scope="col">Location</th>
+          <th scope="col">Work Mode</th>
+          <th scope="col">Status</th>
+          <th scope="col" style="text-align:right;">Actions</th>
         </tr>
       </thead>
       <tbody id="dir-table-tbody">
-        <!-- Rendered via JS -->
+        <!-- Rendered dynamically via JS -->
       </tbody>
     </table>
   </div>
 </div>
 
 <script>
-let dirEmployeesCache = [];
-let dirCurrentView = 'grid';
+  let dirEmployeesCache = [];
+  let dirCurrentView = 'grid';
 
-function loadModule_directory() {
-  const user = App.user;
-  if (user && (user.role === 'admin' || user.role === 'hr')) {
-    document.getElementById('btn-add-employee').style.display = 'inline-flex';
-  }
-
-  callApi('Api_Directory_list', [], function(list) {
-    dirEmployeesCache = list || [];
-    populateDepartmentFilter(dirEmployeesCache);
-    filterEmployeesList();
-  }, showToastError);
-}
-
-function populateDepartmentFilter(list) {
-  const select = document.getElementById('dir-dept-filter');
-  if (!select) return;
-  const depts = new Set(list.map(e => e.department).filter(Boolean));
-  let html = '<option value="">All Departments</option>';
-  depts.forEach(d => {
-    html += `<option value="${d}">${d}</option>`;
-  });
-  select.innerHTML = html;
-}
-
-function filterEmployeesList() {
-  const q = (document.getElementById('dir-search-input')?.value || '').toLowerCase().trim();
-  const dept = document.getElementById('dir-dept-filter')?.value || '';
-  const status = document.getElementById('dir-status-filter')?.value || 'active';
-
-  const filtered = dirEmployeesCache.filter(e => {
-    const matchQ = !q || (e.fullName.toLowerCase().includes(q) || e.email.toLowerCase().includes(q) || e.empId.toLowerCase().includes(q) || (e.designation || '').toLowerCase().includes(q));
-    const matchDept = !dept || (e.department === dept);
-    const matchStatus = (status === 'all') || (e.status === status);
-    return matchQ && matchDept && matchStatus;
-  });
-
-  if (dirCurrentView === 'grid') {
-    renderDirectoryGrid(filtered);
-  } else {
-    renderDirectoryTable(filtered);
-  }
-}
-
-function switchDirectoryView(view) {
-  dirCurrentView = view;
-  document.getElementById('btn-view-grid').classList.toggle('btn-primary', view === 'grid');
-  document.getElementById('btn-view-table').classList.toggle('btn-primary', view === 'table');
-  document.getElementById('dir-grid-view').style.display = view === 'grid' ? 'grid' : 'none';
-  document.getElementById('dir-table-view').style.display = view === 'table' ? 'block' : 'none';
-  filterEmployeesList();
-}
-
-function renderDirectoryGrid(list) {
-  const mount = document.getElementById('dir-grid-view');
-  if (!mount) return;
-
-  if (!list.length) {
-    mount.innerHTML = `<div class="card" style="grid-column:1/-1; text-align:center; padding:40px; color:var(--sd-text-muted);">No employees found matching criteria.</div>`;
-    return;
-  }
-
-  mount.innerHTML = list.map(emp => `
-    <div class="card" style="display:flex; flex-direction:column; justify-content:space-between;">
-      <div>
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
-          <div class="avatar" style="width:48px; height:48px; font-size:16px;">
-            ${emp.photoUrl ? `<img src="${emp.photoUrl}" alt="${emp.fullName}">` : emp.fullName.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()}
-          </div>
-          <span class="pill pill-${(emp.status || 'active').toLowerCase()}">${emp.status}</span>
-        </div>
-        <h4 style="font-size:15px; font-weight:700; color:var(--sd-text-primary); margin-bottom:2px;">${emp.fullName}</h4>
-        <p style="font-size:12.5px; color:var(--sd-primary); font-weight:600; margin-bottom:2px;">${emp.designation || 'Staff'}</p>
-        <p style="font-size:12px; color:var(--sd-text-muted); margin-bottom:12px;">${emp.department || 'General'} • <code>${emp.empId}</code></p>
-        
-        <div style="font-size:12px; color:var(--sd-text-secondary); display:flex; flex-direction:column; gap:4px;">
-          <div>📧 ${emp.email}</div>
-          ${emp.phone ? `<div>📞 ${emp.phone}</div>` : ''}
-          <div>📍 ${emp.location || 'Headquarters'} (${emp.reportingLocation || 'onsite'})</div>
-        </div>
-      </div>
-
-      <div style="margin-top:16px; padding-top:12px; border-top:1px solid var(--sd-border-light); display:flex; justify-content:space-between; align-items:center;">
-        <span style="font-size:11px; color:var(--sd-text-muted);">Joined ${emp.dateOfJoining || '—'}</span>
-        ${(App.user && (App.user.role === 'admin' || App.user.role === 'hr')) ? `
-          <button class="btn btn-secondary btn-sm" onclick="openEditEmployeeModal('${emp.empId}')">Edit</button>
-        ` : ''}
-      </div>
-    </div>
-  `).join('');
-}
-
-function renderDirectoryTable(list) {
-  const tbody = document.getElementById('dir-table-tbody');
-  if (!tbody) return;
-
-  if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--sd-text-muted);">No records found.</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = list.map(emp => `
-    <tr>
-      <td>
-        <div style="display:flex; align-items:center; gap:10px;">
-          <div class="avatar" style="width:32px; height:32px; font-size:12px;">
-            ${emp.photoUrl ? `<img src="${emp.photoUrl}">` : emp.fullName.substring(0,2).toUpperCase()}
-          </div>
-          <div>
-            <strong>${emp.fullName}</strong>
-            <div style="font-size:11px; color:var(--sd-text-muted);">${emp.email} • <code>${emp.empId}</code></div>
-          </div>
-        </div>
-      </td>
-      <td>${emp.designation || '—'}</td>
-      <td>${emp.department || '—'}</td>
-      <td>${emp.location || '—'}</td>
-      <td style="text-transform:capitalize;">${emp.reportingLocation || 'onsite'}</td>
-      <td><span class="pill pill-${(emp.status || 'active').toLowerCase()}">${emp.status}</span></td>
-      <td style="text-align:right;">
-        ${(App.user && (App.user.role === 'admin' || App.user.role === 'hr')) ? `
-          <button class="btn btn-secondary btn-sm" onclick="openEditEmployeeModal('${emp.empId}')">Edit</button>
-        ` : '—'}
-      </td>
-    </tr>
-  `).join('');
-}
-
-function openAddEmployeeModal() {
-  const managers = dirEmployeesCache.filter(e => e.status === 'active');
-  const bodyHtml = `
-    <form id="add-employee-form">
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Full Name *</label>
-          <input type="text" id="emp-fullName" class="form-control" placeholder="Jane Doe" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Work Email *</label>
-          <input type="email" id="emp-email" class="form-control" placeholder="jane.doe@stackdrove.com" required>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Department *</label>
-          <input type="text" id="emp-department" class="form-control" placeholder="Engineering, HR, Sales" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Designation *</label>
-          <input type="text" id="emp-designation" class="form-control" placeholder="Software Engineer" required>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Role Tier *</label>
-          <select id="emp-role" class="form-control">
-            <option value="employee">Employee</option>
-            <option value="manager">Manager</option>
-            <option value="hr">HR</option>
-            <option value="admin">Admin</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Reporting Manager</label>
-          <select id="emp-managerId" class="form-control">
-            <option value="">No Manager (Root Admin)</option>
-            ${managers.map(m => `<option value="${m.empId}">${m.fullName} (${m.empId} - ${m.designation})</option>`).join('')}
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Date of Joining</label>
-          <input type="date" id="emp-dateOfJoining" class="form-control" value="${new Date().toISOString().split('T')[0]}">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Annual Gross CTC (₹)</label>
-          <input type="number" id="emp-ctcAnnual" class="form-control" placeholder="1200000">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Phone Number</label>
-          <input type="tel" id="emp-phone" class="form-control" placeholder="9876543210">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Office Location</label>
-          <input type="text" id="emp-location" class="form-control" value="Headquarters (Bangalore)">
-        </div>
-      </div>
-    </form>
-  `;
-
-  showAppModal('Add New Employee', bodyHtml, 'Save & Send Welcome Email', function() {
-    const payload = {
-      fullName: document.getElementById('emp-fullName').value,
-      email: document.getElementById('emp-email').value,
-      department: document.getElementById('emp-department').value,
-      designation: document.getElementById('emp-designation').value,
-      role: document.getElementById('emp-role').value,
-      managerId: document.getElementById('emp-managerId').value,
-      dateOfJoining: document.getElementById('emp-dateOfJoining').value,
-      ctcAnnual: document.getElementById('emp-ctcAnnual').value,
-      phone: document.getElementById('emp-phone').value,
-      location: document.getElementById('emp-location').value,
-      requestId: newRequestId()
-    };
-
-    if (!payload.fullName || !payload.email) {
-      showToast('Name and Email are required.', 'warning');
-      return;
+  /* ---------- 1. Module Initialization Hook ---------- */
+  function loadModule_directory() {
+    const counter = document.getElementById('dir-results-counter');
+    if (counter) {
+      counter.textContent = 'Syncing from Sheet…';
+      counter.className = 'pill pill-pending';
     }
 
-    callApi('Api_Directory_save', [payload], function(res) {
-      closeAppModal();
-      showToast(`Employee ${res.fullName} (${res.empId}) created successfully`, 'success');
-      loadModule_directory();
-    }, showToastError);
-  });
-}
-
-function openEditEmployeeModal(empId) {
-  const emp = dirEmployeesCache.find(e => e.empId === empId);
-  if (!emp) return;
-
-  const managers = dirEmployeesCache.filter(e => e.status === 'active' && e.empId !== empId);
-  const bodyHtml = `
-    <form id="edit-employee-form">
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Full Name *</label>
-          <input type="text" id="edit-emp-fullName" class="form-control" value="${emp.fullName}" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Work Email *</label>
-          <input type="email" id="edit-emp-email" class="form-control" value="${emp.email}" required>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Department *</label>
-          <input type="text" id="edit-emp-department" class="form-control" value="${emp.department || ''}" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Designation *</label>
-          <input type="text" id="edit-emp-designation" class="form-control" value="${emp.designation || ''}" required>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Role Tier *</label>
-          <select id="edit-emp-role" class="form-control">
-            <option value="employee" ${emp.role === 'employee' ? 'selected' : ''}>Employee</option>
-            <option value="manager" ${emp.role === 'manager' ? 'selected' : ''}>Manager</option>
-            <option value="hr" ${emp.role === 'hr' ? 'selected' : ''}>HR</option>
-            <option value="admin" ${emp.role === 'admin' ? 'selected' : ''}>Admin</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Status</label>
-          <select id="edit-emp-status" class="form-control">
-            <option value="active" ${emp.status === 'active' ? 'selected' : ''}>Active</option>
-            <option value="on-notice" ${emp.status === 'on-notice' ? 'selected' : ''}>On Notice</option>
-            <option value="resigned" ${emp.status === 'resigned' ? 'selected' : ''}>Resigned</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Reporting Manager</label>
-          <select id="edit-emp-managerId" class="form-control">
-            <option value="">No Manager</option>
-            ${managers.map(m => `<option value="${m.empId}" ${m.empId === emp.managerId ? 'selected' : ''}>${m.fullName} (${m.empId})</option>`).join('')}
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Annual Gross CTC (₹)</label>
-          <input type="number" id="edit-emp-ctcAnnual" class="form-control" value="${emp.ctcAnnual || 0}">
-        </div>
-      </div>
-    </form>
-  `;
-
-  showAppModal(`Edit Employee: ${emp.fullName}`, bodyHtml, 'Save Changes', function() {
-    const payload = {
-      empId: empId,
-      fullName: document.getElementById('edit-emp-fullName').value,
-      email: document.getElementById('edit-emp-email').value,
-      department: document.getElementById('edit-emp-department').value,
-      designation: document.getElementById('edit-emp-designation').value,
-      role: document.getElementById('edit-emp-role').value,
-      status: document.getElementById('edit-emp-status').value,
-      managerId: document.getElementById('edit-emp-managerId').value,
-      ctcAnnual: document.getElementById('edit-emp-ctcAnnual').value,
-      requestId: newRequestId()
-    };
-
-    callApi('Api_Directory_save', [payload], function(res) {
-      closeAppModal();
-      showToast(`Updated record for ${res.fullName}`, 'success');
-      loadModule_directory();
-    }, showToastError);
-  });
-}
-
-function openOrgChartModal() {
-  callApi('Api_Directory_getOrgChart', [], function(tree) {
-    function renderNode(node) {
-      return `
-        <div style="margin-left:20px; margin-top:8px; border-left:2px solid var(--sd-border); padding-left:14px;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <strong>${node.name}</strong>
-            <span style="font-size:12px; color:var(--sd-text-muted);">(${node.title} - ${node.dept})</span>
-          </div>
-          ${node.children && node.children.length ? node.children.map(renderNode).join('') : ''}
+    const grid = document.getElementById('dir-grid-view');
+    if (grid && (!dirEmployeesCache || dirEmployeesCache.length === 0)) {
+      grid.innerHTML = `
+        <div class="card" style="grid-column:1/-1; text-align:center; padding:48px 24px; color:var(--sd-text-muted);">
+          <div class="skeleton skeleton-title" style="margin:0 auto 12px; width:180px;"></div>
+          <div style="font-size:14px; font-weight:600; color:var(--sd-navy);">Fetching live employee directory from Google Sheet…</div>
         </div>
       `;
     }
 
-    const html = `<div style="max-height:60vh; overflow-y:auto;">${tree.map(renderNode).join('')}</div>`;
-    showAppModal('Company Organization Tree', html, null, null);
-  }, showToastError);
-}
+    // Call live backend API to pull Google Sheet directory
+    callApi('Api_Directory_list', [], function(list) {
+      dirEmployeesCache = Array.isArray(list) ? list : [];
+      populateDepartmentFilter(dirEmployeesCache);
+      filterEmployeesList();
+    }, function(err) {
+      console.warn('Directory load error:', err);
+      // Attempt fallback via Api_Dashboard_getData
+      callApi('Api_Dashboard_getData', [], function(dash) {
+        if (dash && dash.org && dash.org.allEmployees) {
+          dirEmployeesCache = dash.org.allEmployees;
+          populateDepartmentFilter(dirEmployeesCache);
+          filterEmployeesList();
+        } else {
+          showToast('Could not fetch employees: ' + (err.message || err), 'warning');
+        }
+      });
+    });
+  }
+
+  // Ensure routing can always find this hook globally
+  window.loadModule_directory = loadModule_directory;
+
+  /* ---------- 2. Dynamic Department Selector Generator ---------- */
+  function populateDepartmentFilter(list) {
+    const select = document.getElementById('dir-dept-filter');
+    if (!select) return;
+    const currentVal = select.value;
+    const depts = new Set();
+    list.forEach(e => {
+      if (e.department) depts.add(String(e.department).trim());
+    });
+
+    let html = '<option value="">All Departments</option>';
+    Array.from(depts).sort().forEach(d => {
+      html += `<option value="${d}" ${d === currentVal ? 'selected' : ''}>${d}</option>`;
+    });
+    select.innerHTML = html;
+  }
+
+  /* ---------- 3. Filtering & Search Logic ---------- */
+  function filterEmployeesList() {
+    const q = (document.getElementById('dir-search-input')?.value || '').toLowerCase().trim();
+    const dept = document.getElementById('dir-dept-filter')?.value || '';
+    const status = document.getElementById('dir-status-filter')?.value || 'active';
+
+    const filtered = dirEmployeesCache.filter(e => {
+      const matchQ = !q || (
+        (e.fullName && String(e.fullName).toLowerCase().includes(q)) ||
+        (e.email && String(e.email).toLowerCase().includes(q)) ||
+        (e.empId && String(e.empId).toLowerCase().includes(q)) ||
+        (e.designation && String(e.designation).toLowerCase().includes(q)) ||
+        (e.department && String(e.department).toLowerCase().includes(q)) ||
+        (e.location && String(e.location).toLowerCase().includes(q))
+      );
+      const matchDept = !dept || (String(e.department || '').trim() === dept);
+      const eStatus = String(e.status || 'active').trim().toLowerCase();
+      const matchStatus = (status === 'all') || (eStatus === status.toLowerCase());
+      return matchQ && matchDept && matchStatus;
+    });
+
+    // Update Counter & Reset Button
+    const counter = document.getElementById('dir-results-counter');
+    const resetBtn = document.getElementById('btn-reset-filters');
+    const hasFilter = q || dept || (status !== 'active');
+
+    if (counter) {
+      counter.textContent = `Showing ${filtered.length} of ${dirEmployeesCache.length}`;
+      counter.className = 'pill ' + (filtered.length === 0 ? 'pill-rejected' : 'pill-approved');
+    }
+    if (resetBtn) {
+      resetBtn.style.display = hasFilter ? 'inline-flex' : 'none';
+    }
+
+    if (dirCurrentView === 'grid') {
+      renderDirectoryGrid(filtered);
+    } else {
+      renderDirectoryTable(filtered);
+    }
+  }
+
+  function handleSearchInputChange() {
+    const q = document.getElementById('dir-search-input')?.value || '';
+    const clearBtn = document.getElementById('btn-clear-search');
+    if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+    filterEmployeesList();
+  }
+
+  function clearDirectorySearch() {
+    const input = document.getElementById('dir-search-input');
+    if (input) input.value = '';
+    const clearBtn = document.getElementById('btn-clear-search');
+    if (clearBtn) clearBtn.style.display = 'none';
+    filterEmployeesList();
+  }
+
+  function resetDirectoryFilters() {
+    clearDirectorySearch();
+    const deptSel = document.getElementById('dir-dept-filter');
+    const statSel = document.getElementById('dir-status-filter');
+    if (deptSel) deptSel.value = '';
+    if (statSel) statSel.value = 'active';
+    filterEmployeesList();
+  }
+
+  /* ---------- 4. View Switcher (Grid vs Table) ---------- */
+  function switchDirectoryView(view) {
+    dirCurrentView = view;
+    const btnGrid = document.getElementById('btn-view-grid');
+    const btnTable = document.getElementById('btn-view-table');
+    const gridView = document.getElementById('dir-grid-view');
+    const tableView = document.getElementById('dir-table-view');
+
+    if (btnGrid) btnGrid.classList.toggle('active', view === 'grid');
+    if (btnTable) btnTable.classList.toggle('active', view === 'table');
+    if (gridView) gridView.style.display = (view === 'grid') ? 'grid' : 'none';
+    if (tableView) tableView.style.display = (view === 'table') ? 'block' : 'none';
+
+    filterEmployeesList();
+  }
+
+  /* ---------- 5. Render Grid Cards (Modern SaaS Aesthetic + Fully Clickable) ---------- */
+  function renderDirectoryGrid(list) {
+    const mount = document.getElementById('dir-grid-view');
+    if (!mount) return;
+
+    if (!list.length) {
+      mount.innerHTML = `
+        <div class="card" style="grid-column:1/-1; text-align:center; padding:48px 24px; color:var(--sd-text-muted);">
+          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:36px; height:36px; margin:0 auto 12px; color:var(--sd-text-muted);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          <div style="font-size:15px; font-weight:700; color:var(--sd-navy); margin-bottom:4px;">No employees match your search</div>
+          <p style="font-size:13px; margin:0 0 16px;">Try adjusting your keywords, clearing department filter, or registering a new hire.</p>
+          <button class="button button-secondary button-sm" type="button" onclick="resetDirectoryFilters()">Reset all filters</button>
+        </div>
+      `;
+      return;
+    }
+
+    mount.innerHTML = list.map(emp => {
+      const eStatus = String(emp.status || 'active').trim().toLowerCase();
+      const statusClass = eStatus === 'active' 
+        ? 'pill-active' 
+        : (eStatus === 'on-notice' ? 'pill-on-notice' : 'pill-resigned');
+
+      const initials = String(emp.fullName || 'User')
+        .trim()
+        .split(' ')
+        .map(n => n[0])
+        .join('')
+        .substring(0, 2)
+        .toUpperCase();
+
+      const workMode = String(emp.reportingLocation || 'onsite').toLowerCase();
+      const workModeBadge = workMode === 'remote' 
+        ? '<span style="background:#EFF6FF; color:#2563EB; font-size:11px; font-weight:600; padding:2px 8px; border-radius:6px;">Remote</span>' 
+        : workMode === 'hybrid' 
+          ? '<span style="background:#FEF3C7; color:#B45309; font-size:11px; font-weight:600; padding:2px 8px; border-radius:6px;">Hybrid</span>' 
+          : '<span style="background:#F1F5F9; color:#475569; font-size:11px; font-weight:600; padding:2px 8px; border-radius:6px;">Onsite</span>';
+
+      return `
+        <div class="emp-card" style="cursor:pointer;" onclick="openEmployeeDetailModal('${emp.empId}')" title="Click to view full employee details">
+          <div>
+            <!-- Card Header: Avatar & Status -->
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
+              <div class="avatar" style="width:48px; height:48px; font-size:16px; background:#0B1635; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+                ${emp.photoUrl ? `<img src="${emp.photoUrl}" alt="${emp.fullName}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : initials}
+              </div>
+              <span class="pill ${statusClass}">${emp.status || 'Active'}</span>
+            </div>
+
+            <!-- Name, Role & Org Metadata -->
+            <h3 style="font-size:16px; font-weight:700; color:var(--sd-navy); margin-bottom:2px; letter-spacing:-0.2px;">${emp.fullName}</h3>
+            <div style="font-size:13px; color:var(--sd-primary); font-weight:600; margin-bottom:2px;">${emp.designation || 'Staff'}</div>
+            <div style="font-size:12px; color:var(--sd-text-muted); margin-bottom:14px;">
+              ${emp.department || 'General'} · <code style="background:var(--sd-surface-subtle); padding:1px 5px; border-radius:4px; border:1px solid var(--sd-border); font-size:11px;">${emp.empId}</code>
+            </div>
+
+            <!-- Contact Meta with Lucide SVGs (Zero Emojis) -->
+            <div style="display:flex; flex-direction:column; gap:7px; padding:12px; background:var(--sd-surface-subtle); border-radius:8px; border:1px solid var(--sd-border-light); margin-bottom:16px;">
+              <div class="emp-meta-item" title="${emp.email}">
+                <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                <span>${emp.email}</span>
+              </div>
+              ${emp.phone ? `
+                <div class="emp-meta-item" title="${emp.phone}">
+                  <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  <span>${emp.phone}</span>
+                </div>
+              ` : ''}
+              <div class="emp-meta-item" title="${emp.location || 'Headquarters'}">
+                <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span>${emp.location || 'Headquarters'}</span>
+                <span style="margin-left:auto;">${workModeBadge}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card Footer Action Buttons -->
+          <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--sd-border); padding-top:12px; margin-top:auto;" onclick="event.stopPropagation();">
+            <button class="button button-ghost button-sm" type="button" onclick="openEmployeeDetailModal('${emp.empId}')" style="font-weight:600;">
+              View Profile →
+            </button>
+            <div style="display:flex; gap:6px;">
+              <button class="button button-secondary button-sm" type="button" onclick="openEditEmployeeModal('${emp.empId}')" title="Edit Employee">
+                <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                Edit
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  /* ---------- 6. Render Table View ---------- */
+  function renderDirectoryTable(list) {
+    const tbody = document.getElementById('dir-table-tbody');
+    if (!tbody) return;
+
+    if (!list.length) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:36px; color:var(--sd-text-muted);">No employees found matching criteria.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = list.map(emp => {
+      const eStatus = String(emp.status || 'active').trim().toLowerCase();
+      const statusClass = eStatus === 'active' 
+        ? 'pill-active' 
+        : (eStatus === 'on-notice' ? 'pill-on-notice' : 'pill-resigned');
+
+      const initials = String(emp.fullName || 'User')
+        .trim()
+        .split(' ')
+        .map(n => n[0])
+        .join('')
+        .substring(0, 2)
+        .toUpperCase();
+
+      const workMode = String(emp.reportingLocation || 'onsite').toLowerCase();
+      const workModeBadge = workMode === 'remote' 
+        ? '<span style="background:#EFF6FF; color:#2563EB; font-size:11px; font-weight:600; padding:2px 8px; border-radius:6px;">Remote</span>' 
+        : workMode === 'hybrid' 
+          ? '<span style="background:#FEF3C7; color:#B45309; font-size:11px; font-weight:600; padding:2px 8px; border-radius:6px;">Hybrid</span>' 
+          : '<span style="background:#F1F5F9; color:#475569; font-size:11px; font-weight:600; padding:2px 8px; border-radius:6px;">Onsite</span>';
+
+      return `
+        <tr style="cursor:pointer;" onclick="openEmployeeDetailModal('${emp.empId}')">
+          <td>
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div class="avatar" style="width:36px; height:36px; font-size:13px; background:#0B1635; flex-shrink:0;">
+                ${emp.photoUrl ? `<img src="${emp.photoUrl}" alt="${emp.fullName}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : initials}
+              </div>
+              <div>
+                <strong style="color:var(--sd-navy); font-size:13.5px;">${emp.fullName}</strong>
+                <div style="font-size:11.5px; color:var(--sd-text-muted);">${emp.email} · <code>${emp.empId}</code></div>
+              </div>
+            </div>
+          </td>
+          <td style="font-weight:600; color:var(--sd-primary); font-size:13px;">${emp.designation || '—'}</td>
+          <td style="font-size:13px; color:var(--sd-text-secondary);">${emp.department || '—'}</td>
+          <td style="font-size:13px; color:var(--sd-text-secondary);">${emp.location || 'Headquarters'}</td>
+          <td>${workModeBadge}</td>
+          <td><span class="pill ${statusClass}">${emp.status || 'Active'}</span></td>
+          <td style="text-align:right;" onclick="event.stopPropagation();">
+            <button class="button button-ghost button-sm" type="button" onclick="openEmployeeDetailModal('${emp.empId}')" style="margin-right:4px;">
+              View
+            </button>
+            <button class="button button-secondary button-sm" type="button" onclick="openEditEmployeeModal('${emp.empId}')">
+              <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+              Edit
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  /* ---------- 7. Comprehensive Employee Detail / Profile Drawer ---------- */
+  function openEmployeeDetailModal(empId) {
+    const emp = dirEmployeesCache.find(e => String(e.empId).trim().toLowerCase() === String(empId).trim().toLowerCase());
+    if (!emp) {
+      showToast('Employee profile could not be found.', 'warning');
+      return;
+    }
+
+    const manager = emp.managerId ? dirEmployeesCache.find(e => String(e.empId).toLowerCase() === String(emp.managerId).toLowerCase()) : null;
+    const directReports = dirEmployeesCache.filter(e => String(e.managerId).toLowerCase() === String(emp.empId).toLowerCase());
+
+    const initials = String(emp.fullName || 'User')
+      .trim()
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
+
+    const eStatus = String(emp.status || 'active').trim().toLowerCase();
+    const statusClass = eStatus === 'active' 
+      ? 'pill-active' 
+      : (eStatus === 'on-notice' ? 'pill-on-notice' : 'pill-resigned');
+
+    const bodyHtml = `
+      <div style="display:flex; flex-direction:column; gap:20px;">
+        <!-- Top Profile Banner -->
+        <div style="display:flex; align-items:center; gap:18px; padding-bottom:18px; border-bottom:1px solid var(--sd-border);">
+          <div class="avatar" style="width:68px; height:68px; font-size:22px; background:#0B1635; box-shadow:0 4px 10px rgba(0,0,0,0.15); flex-shrink:0;">
+            ${emp.photoUrl ? `<img src="${emp.photoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : initials}
+          </div>
+          <div style="flex:1;">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px;">
+              <h2 style="font-size:20px; font-weight:800; color:var(--sd-navy); margin:0;">${emp.fullName}</h2>
+              <span class="pill ${statusClass}">${emp.status || 'Active'}</span>
+            </div>
+            <div style="font-size:14px; font-weight:600; color:var(--sd-primary); margin-bottom:4px;">${emp.designation || 'Staff'}</div>
+            <div style="font-size:12.5px; color:var(--sd-text-muted);">
+              ${emp.department || 'General'} · <code style="background:var(--sd-surface-subtle); padding:1px 6px; border-radius:4px; border:1px solid var(--sd-border); font-size:11.5px;">${emp.empId}</code> · Role: <strong style="text-transform:capitalize;">${emp.role || 'employee'}</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2-Column Details Grid -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px;">
+          
+          <!-- Contact & Location Card -->
+          <div style="background:var(--sd-surface-subtle); border:1px solid var(--sd-border); border-radius:10px; padding:16px;">
+            <div style="font-size:11px; font-weight:700; color:var(--sd-text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Contact & Work Info</div>
+            <div style="display:flex; flex-direction:column; gap:9px; font-size:13px;">
+              <div><strong style="color:var(--sd-text-secondary);">Email:</strong> <a href="mailto:${emp.email}" style="color:var(--sd-primary); text-decoration:none; font-weight:600;">${emp.email}</a></div>
+              <div><strong style="color:var(--sd-text-secondary);">Phone:</strong> ${emp.phone ? `<a href="tel:${emp.phone}" style="color:var(--sd-text-primary); text-decoration:none;">${emp.phone}</a>` : '—'}</div>
+              <div><strong style="color:var(--sd-text-secondary);">Location:</strong> ${emp.location || 'Headquarters'}</div>
+              <div><strong style="color:var(--sd-text-secondary);">Work Mode:</strong> <span style="text-transform:capitalize;">${emp.reportingLocation || 'onsite'}</span></div>
+              <div><strong style="color:var(--sd-text-secondary);">Employment:</strong> <span style="text-transform:capitalize;">${emp.employmentType || 'full-time'}</span></div>
+              <div><strong style="color:var(--sd-text-secondary);">Joined Date:</strong> ${emp.dateOfJoining || '—'}</div>
+            </div>
+          </div>
+
+          <!-- Reporting Hierarchy Card -->
+          <div style="background:var(--sd-surface-subtle); border:1px solid var(--sd-border); border-radius:10px; padding:16px;">
+            <div style="font-size:11px; font-weight:700; color:var(--sd-text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Hierarchy & Team</div>
+            <div style="font-size:13px; margin-bottom:12px;">
+              <div style="color:var(--sd-text-muted); font-size:11.5px; margin-bottom:4px;">Reports to Manager:</div>
+              ${manager ? `
+                <div style="display:flex; align-items:center; gap:8px; background:var(--sd-surface); border:1px solid var(--sd-border); border-radius:8px; padding:8px 10px; cursor:pointer;" onclick="openEmployeeDetailModal('${manager.empId}')">
+                  <div class="avatar" style="width:28px; height:28px; font-size:11px; background:#0B1635;">${manager.fullName.substring(0,2).toUpperCase()}</div>
+                  <div>
+                    <div style="font-weight:700; font-size:12.5px; color:var(--sd-navy);">${manager.fullName}</div>
+                    <div style="font-size:11px; color:var(--sd-primary);">${manager.designation}</div>
+                  </div>
+                </div>
+              ` : '<span style="font-weight:600; color:var(--sd-text-muted);">Root / Executive Leadership</span>'}
+            </div>
+
+            <div style="font-size:13px;">
+              <div style="color:var(--sd-text-muted); font-size:11.5px; margin-bottom:4px;">Direct Reports (${directReports.length}):</div>
+              ${directReports.length > 0 ? `
+                <div style="display:flex; flex-direction:column; gap:5px; max-height:100px; overflow-y:auto;">
+                  ${directReports.map(dr => `
+                    <div style="font-size:12px; color:var(--sd-text-primary); cursor:pointer; padding:3px 6px; border-radius:4px; background:var(--sd-surface);" onclick="openEmployeeDetailModal('${dr.empId}')">
+                      ● <strong>${dr.fullName}</strong> <small style="color:var(--sd-text-muted);">(${dr.designation})</small>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : '<span style="font-size:12px; color:var(--sd-text-muted);">No direct reports</span>'}
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Action Toolbar -->
+        <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; padding-top:12px; border-top:1px solid var(--sd-border);">
+          <a href="mailto:${emp.email}" class="button button-secondary" style="text-decoration:none;">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            Email
+          </a>
+          ${emp.phone ? `
+            <a href="tel:${emp.phone}" class="button button-secondary" style="text-decoration:none;">
+              <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              Call
+            </a>
+          ` : ''}
+          <button class="button button-secondary" type="button" onclick="openOrgChartModal()">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Locate in Org Tree
+          </button>
+          <button class="button button-primary" type="button" onclick="openEditEmployeeModal('${emp.empId}')">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+            Edit Record
+          </button>
+        </div>
+      </div>
+    `;
+
+    showAppModal(`Employee Profile: ${emp.fullName}`, bodyHtml, null, null, true);
+  }
+
+  /* ---------- 8. Add Employee Modal ---------- */
+  function openAddEmployeeModal() {
+    const managers = dirEmployeesCache.filter(e => String(e.status || 'active').toLowerCase() === 'active');
+    const bodyHtml = `
+      <form id="add-employee-form" onsubmit="event.preventDefault();">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input type="text" id="emp-fullName" class="form-control" placeholder="e.g. Priya Sharma" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Work Email *</label>
+            <input type="email" id="emp-email" class="form-control" placeholder="e.g. priya.sharma@stackdrove.com" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Department *</label>
+            <input type="text" id="emp-department" class="form-control" placeholder="Engineering, HR, Operations, Sales" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Designation *</label>
+            <input type="text" id="emp-designation" class="form-control" placeholder="e.g. Senior Software Engineer" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Role Tier</label>
+            <select id="emp-role" class="form-control">
+              <option value="employee">Employee / Staff</option>
+              <option value="manager">Team Manager</option>
+              <option value="hr">HR Administrator</option>
+              <option value="admin">Super Admin</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Reporting Manager</label>
+            <select id="emp-managerId" class="form-control">
+              <option value="">No Manager (Executive / Root)</option>
+              ${managers.map(m => `<option value="${m.empId}">${m.fullName} (${m.empId} · ${m.designation || m.department})</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Work Location</label>
+            <input type="text" id="emp-location" class="form-control" value="Headquarters (Bangalore)">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Work Mode</label>
+            <select id="emp-reportingLocation" class="form-control">
+              <option value="onsite">Onsite (Office)</option>
+              <option value="hybrid">Hybrid</option>
+              <option value="remote">Remote (Work from Home)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Date of Joining</label>
+            <input type="date" id="emp-dateOfJoining" class="form-control" value="${new Date().toISOString().split('T')[0]}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Annual Gross CTC (₹)</label>
+            <input type="number" id="emp-ctcAnnual" class="form-control" placeholder="e.g. 1500000">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Phone Number</label>
+            <input type="tel" id="emp-phone" class="form-control" placeholder="9876543210">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Emergency Contact</label>
+            <input type="tel" id="emp-emergencyContact" class="form-control" placeholder="Emergency contact number">
+          </div>
+        </div>
+      </form>
+    `;
+
+    showAppModal('Add New Employee to Directory', bodyHtml, 'Save & Register Employee', function() {
+      const name = document.getElementById('emp-fullName')?.value.trim();
+      const email = document.getElementById('emp-email')?.value.trim();
+      const dept = document.getElementById('emp-department')?.value.trim();
+      const desig = document.getElementById('emp-designation')?.value.trim();
+
+      if (!name || !email) {
+        showToast('Full Name and Work Email are required.', 'warning');
+        return;
+      }
+
+      const payload = {
+        fullName: name,
+        email: email,
+        department: dept || 'General',
+        designation: desig || 'Staff',
+        role: document.getElementById('emp-role')?.value || 'employee',
+        managerId: document.getElementById('emp-managerId')?.value || '',
+        location: document.getElementById('emp-location')?.value || 'Headquarters',
+        reportingLocation: document.getElementById('emp-reportingLocation')?.value || 'onsite',
+        dateOfJoining: document.getElementById('emp-dateOfJoining')?.value || '',
+        ctcAnnual: document.getElementById('emp-ctcAnnual')?.value || 0,
+        phone: document.getElementById('emp-phone')?.value || '',
+        emergencyContact: document.getElementById('emp-emergencyContact')?.value || '',
+        requestId: newRequestId()
+      };
+
+      setModalLoading(true, 'Registering Employee…');
+      showModalStatus('Adding new employee to Google Sheet Directory…', 'info');
+
+      callApi('Api_Directory_save', [payload], function(res) {
+        showModalStatus('✓ Employee registered successfully in Google Sheet!', 'success');
+        const savedEmp = res || payload;
+        // Inject into cache immediately
+        if (!dirEmployeesCache.some(e => String(e.email).toLowerCase() === String(savedEmp.email).toLowerCase())) {
+          dirEmployeesCache.push(savedEmp);
+        }
+        populateDepartmentFilter(dirEmployeesCache);
+        filterEmployeesList();
+
+        setTimeout(function() {
+          closeAppModal();
+          showToast(`Employee ${savedEmp.fullName || name} registered successfully in Google Sheet.`, 'success');
+        }, 700);
+        
+        // Re-sync with sheet in background
+        callApi('Api_Directory_list', [], function(freshList) {
+          if (freshList && freshList.length) {
+            dirEmployeesCache = freshList;
+            populateDepartmentFilter(dirEmployeesCache);
+            filterEmployeesList();
+          }
+        });
+      }, function(err) {
+        setModalLoading(false);
+        showModalStatus('Registration failed: ' + (err.message || err), 'error');
+        showToast('Could not save employee: ' + (err.message || err), 'error');
+      });
+    });
+  }
+
+  /* ---------- 9. Edit Employee Modal ---------- */
+  function openEditEmployeeModal(empId) {
+    const emp = dirEmployeesCache.find(e => String(e.empId).trim().toLowerCase() === String(empId).trim().toLowerCase());
+    if (!emp) {
+      showToast('Employee record not found in directory cache.', 'warning');
+      return;
+    }
+
+    const managers = dirEmployeesCache.filter(e => String(e.status || 'active').toLowerCase() === 'active' && String(e.empId).toLowerCase() !== String(empId).toLowerCase());
+    const bodyHtml = `
+      <form id="edit-employee-form" onsubmit="event.preventDefault();">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input type="text" id="edit-emp-fullName" class="form-control" value="${emp.fullName || ''}" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Work Email *</label>
+            <input type="email" id="edit-emp-email" class="form-control" value="${emp.email || ''}" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Department *</label>
+            <input type="text" id="edit-emp-department" class="form-control" value="${emp.department || ''}" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Designation *</label>
+            <input type="text" id="edit-emp-designation" class="form-control" value="${emp.designation || ''}" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Role Tier</label>
+            <select id="edit-emp-role" class="form-control">
+              <option value="employee" ${String(emp.role).toLowerCase() === 'employee' ? 'selected' : ''}>Employee / Staff</option>
+              <option value="manager" ${String(emp.role).toLowerCase() === 'manager' ? 'selected' : ''}>Team Manager</option>
+              <option value="hr" ${String(emp.role).toLowerCase() === 'hr' ? 'selected' : ''}>HR Administrator</option>
+              <option value="admin" ${String(emp.role).toLowerCase() === 'admin' ? 'selected' : ''}>Super Admin</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Employment Status</label>
+            <select id="edit-emp-status" class="form-control">
+              <option value="active" ${String(emp.status || 'active').toLowerCase() === 'active' ? 'selected' : ''}>Active</option>
+              <option value="on-notice" ${String(emp.status || '').toLowerCase() === 'on-notice' ? 'selected' : ''}>On Notice</option>
+              <option value="resigned" ${String(emp.status || '').toLowerCase() === 'resigned' ? 'selected' : ''}>Resigned</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Reporting Manager</label>
+            <select id="edit-emp-managerId" class="form-control">
+              <option value="">No Manager</option>
+              ${managers.map(m => `<option value="${m.empId}" ${String(m.empId).toLowerCase() === String(emp.managerId).toLowerCase() ? 'selected' : ''}>${m.fullName} (${m.empId})</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Work Mode</label>
+            <select id="edit-emp-reportingLocation" class="form-control">
+              <option value="onsite" ${String(emp.reportingLocation || '').toLowerCase() === 'onsite' ? 'selected' : ''}>Onsite</option>
+              <option value="hybrid" ${String(emp.reportingLocation || '').toLowerCase() === 'hybrid' ? 'selected' : ''}>Hybrid</option>
+              <option value="remote" ${String(emp.reportingLocation || '').toLowerCase() === 'remote' ? 'selected' : ''}>Remote</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Location</label>
+            <input type="text" id="edit-emp-location" class="form-control" value="${emp.location || 'Headquarters'}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Annual CTC (₹)</label>
+            <input type="number" id="edit-emp-ctcAnnual" class="form-control" value="${emp.ctcAnnual || 0}">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Phone</label>
+            <input type="tel" id="edit-emp-phone" class="form-control" value="${emp.phone || ''}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Employee ID</label>
+            <input type="text" class="form-control" value="${emp.empId}" disabled style="opacity:0.75;">
+          </div>
+        </div>
+      </form>
+    `;
+
+    showAppModal(`Edit Record: ${emp.fullName}`, bodyHtml, 'Save Changes', function() {
+      const payload = {
+        empId: empId,
+        fullName: document.getElementById('edit-emp-fullName')?.value.trim(),
+        email: document.getElementById('edit-emp-email')?.value.trim(),
+        department: document.getElementById('edit-emp-department')?.value.trim(),
+        designation: document.getElementById('edit-emp-designation')?.value.trim(),
+        role: document.getElementById('edit-emp-role')?.value,
+        status: document.getElementById('edit-emp-status')?.value,
+        managerId: document.getElementById('edit-emp-managerId')?.value,
+        reportingLocation: document.getElementById('edit-emp-reportingLocation')?.value,
+        location: document.getElementById('edit-emp-location')?.value,
+        ctcAnnual: document.getElementById('edit-emp-ctcAnnual')?.value,
+        phone: document.getElementById('edit-emp-phone')?.value,
+        requestId: newRequestId()
+      };
+
+      setModalLoading(true, 'Saving Changes…');
+      showModalStatus('Updating employee in Google Sheet Directory…', 'info');
+
+      callApi('Api_Directory_save', [payload], function(res) {
+        showModalStatus('✓ Changes saved successfully to Google Sheet!', 'success');
+        const updated = res || payload;
+        const idx = dirEmployeesCache.findIndex(e => String(e.empId).toLowerCase() === String(empId).toLowerCase());
+        if (idx !== -1) {
+          dirEmployeesCache[idx] = Object.assign({}, dirEmployeesCache[idx], updated);
+        }
+        populateDepartmentFilter(dirEmployeesCache);
+        filterEmployeesList();
+
+        setTimeout(function() {
+          closeAppModal();
+          showToast(`Record for ${updated.fullName || emp.fullName} updated in Sheet.`, 'success');
+        }, 700);
+      }, function(err) {
+        setModalLoading(false);
+        showModalStatus('Update failed: ' + (err.message || err), 'error');
+        showToast('Update failed: ' + (err.message || err), 'error');
+      });
+    });
+  }
+
+  /* ---------- 10. Automatic Org Hierarchy Built from Directory Data ---------- */
+  function buildOrgTreeFromCache(list) {
+    if (!list || !list.length) return [];
+    const active = list.filter(e => String(e.status || 'active').toLowerCase() === 'active');
+    if (!active.length) return [];
+
+    const map = {};
+    active.forEach(e => {
+      map[e.empId] = {
+        empId: e.empId,
+        name: e.fullName,
+        title: e.designation || 'Staff',
+        dept: e.department || 'General',
+        photo: e.photoUrl || '',
+        managerId: e.managerId ? String(e.managerId).trim() : '',
+        children: []
+      };
+    });
+
+    const roots = [];
+    active.forEach(e => {
+      const node = map[e.empId];
+      const mId = node.managerId;
+      if (mId && mId !== e.empId && map[mId]) {
+        map[mId].children.push(node);
+      } else {
+        roots.push(node);
+      }
+    });
+
+    // If no roots due to missing manager references, pick first person
+    if (roots.length === 0 && active.length > 0) {
+      roots.push(map[active[0].empId]);
+    }
+
+    return roots;
+  }
+
+  function renderOrgNodeHTML(node, level = 0) {
+    const initials = String(node.name || 'User')
+      .trim()
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
+
+    const hasChildren = node.children && node.children.length > 0;
+
+    return `
+      <div style="margin-left:${level > 0 ? '26px' : '0'}; margin-top:12px; position:relative;">
+        ${level > 0 ? `<div style="position:absolute; left:-16px; top:22px; width:14px; border-top:2px solid var(--sd-border);"></div>` : ''}
+        <div class="org-tree-node" style="cursor:pointer;" onclick="openEmployeeDetailModal('${node.empId}')" title="Click to view full profile">
+          <div class="avatar" style="width:38px; height:38px; font-size:13px; background:#0B1635; flex-shrink:0;">
+            ${node.photo ? `<img src="${node.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : initials}
+          </div>
+          <div style="min-width:0;">
+            <div style="font-weight:700; font-size:14px; color:var(--sd-navy);">${node.name}</div>
+            <div style="font-size:12px; color:var(--sd-primary); font-weight:600;">${node.title || 'Staff'}</div>
+          </div>
+          <span class="pill pill-neutral" style="margin-left:auto; font-size:11px;">${node.dept || 'General'}</span>
+          ${hasChildren ? `<span style="background:#EFF6FF; color:#2563EB; font-size:11px; font-weight:700; padding:2px 7px; border-radius:10px; margin-left:6px;">${node.children.length} reports</span>` : ''}
+        </div>
+        ${hasChildren ? `
+          <div style="border-left:2px solid var(--sd-border); margin-left:19px; padding-left:0;">
+            ${node.children.map(child => renderOrgNodeHTML(child, level + 1)).join('')}
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
+  function openOrgChartModal() {
+    // 1. Build immediately from active Directory Data
+    let roots = buildOrgTreeFromCache(dirEmployeesCache);
+
+    if (roots.length > 0) {
+      const treeHtml = `
+        <div style="margin-bottom:12px; font-size:13px; color:var(--sd-text-secondary); display:flex; justify-content:space-between; align-items:center;">
+          <span>Hierarchy dynamically constructed from active employee records in Google Sheets.</span>
+          <span class="pill pill-approved">${dirEmployeesCache.length} Employees</span>
+        </div>
+        <div style="max-height:65vh; overflow-y:auto; padding:10px 4px;">
+          ${roots.map(rootNode => renderOrgNodeHTML(rootNode, 0)).join('')}
+        </div>
+      `;
+      showAppModal('Company Organization Tree', treeHtml, null, null, true);
+    } else {
+      // If directory cache is empty, fetch from server endpoint
+      showToast('Generating org hierarchy from Sheet data…', 'info');
+      callApi('Api_Directory_getOrgChart', [], function(tree) {
+        if (tree && tree.length) {
+          const treeHtml = `
+            <div style="margin-bottom:12px; font-size:13px; color:var(--sd-text-secondary);">
+              Hierarchy dynamically constructed from active employee records in Google Sheets.
+            </div>
+            <div style="max-height:65vh; overflow-y:auto; padding:10px 4px;">
+              ${tree.map(rootNode => renderOrgNodeHTML(rootNode, 0)).join('')}
+            </div>
+          `;
+          showAppModal('Company Organization Tree', treeHtml, null, null, true);
+        } else {
+          showAppModal('Company Organization Tree', '<div style="text-align:center; padding:32px; color:var(--sd-text-muted);">No reporting hierarchy found in Directory Sheet. Please add employees or set their Reporting Manager to build the tree.</div>', null, null, true);
+        }
+      }, function(err) {
+        showToast('Could not generate org chart: ' + (err.message || err), 'warning');
+      });
+    }
+  }
+
+  // Automatic immediate execution if directory is the active module on load
+  if (window.location.hash === '#directory' || document.getElementById('module-directory')?.style.display !== 'none') {
+    loadModule_directory();
+  }
 </script>

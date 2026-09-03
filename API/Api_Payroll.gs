@@ -82,7 +82,7 @@ function Api_Payroll_publish(drafts) {
 
     const orgName = Config.get('ORG_NAME') || 'StackDrove Technologies';
     let folder;
-    const folderId = Config.getFolderId('PAYSLIPS');
+    const folderId = typeof Config.getFolderId === 'function' ? Config.getFolderId('PAYSLIPS') : Config.get('DRIVE_FOLDER_PAYSLIPS');
     if (folderId) {
       try { folder = DriveApp.getFolderById(folderId); } catch (_) {}
     }
@@ -147,9 +147,9 @@ function generatePayslipDocumentHtml_(emp, payroll, orgName) {
       <meta charset="utf-8">
       <style>
         body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 30px; color: #111827; font-size: 13px; }
-        .header { text-align: center; border-bottom: 2px solid #4F46E5; padding-bottom: 14px; margin-bottom: 20px; }
+        .header { text-align: center; border-bottom: 2px solid #2563EB; padding-bottom: 14px; margin-bottom: 20px; }
         .company-title { font-size: 20px; font-weight: bold; color: #111827; }
-        .payslip-title { font-size: 15px; font-weight: 600; color: #4F46E5; margin-top: 4px; }
+        .payslip-title { font-size: 15px; font-weight: 600; color: #2563EB; margin-top: 4px; }
         .info-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; }
         .info-table td { padding: 6px 10px; border: 1px solid #E5E7EB; }
         .breakdown-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; }
@@ -221,7 +221,7 @@ function generatePayslipDocumentHtml_(emp, payroll, orgName) {
       </table>
 
       <div class="net-pay-box">
-        <div style="display:flex; justify-content:space-between; font-size:15px; font-weight:bold; color:#1E1B4B;">
+        <div style="display:flex; justify-content:space-between; font-size:15px; font-weight:bold; color:#0B1635;">
           <span>Net Take-Home Pay:</span>
           <span>${formatCurrency(payroll.netPay)}</span>
         </div>

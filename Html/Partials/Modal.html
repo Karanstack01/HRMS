@@ -1,18 +1,18 @@
 <!-- Global Modal Container -->
 <div id="global-modal-backdrop" class="modal-backdrop" onclick="handleBackdropClick(event)">
   <div class="modal-container" id="global-modal-content">
-    <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--sd-border);">
-      <h3 id="modal-title" style="font-size: 17px; font-weight: 700;">Dialog</h3>
-      <button class="btn-icon" onclick="closeAppModal()" style="width: 32px; height: 32px;">
-        <span class="icon-slot" data-icon="x"></span>
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1px solid var(--sd-border);">
+      <h3 id="modal-title" style="font-size: 17px; font-weight: 700; color: var(--sd-navy); margin: 0;">Dialog</h3>
+      <button type="button" class="button button-ghost button-sm" onclick="closeAppModal()" style="padding: 4px 8px; border-radius: 6px;" title="Close">
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width: 18px; height: 18px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
-    <div id="modal-body" style="padding: 24px;">
+    <div id="modal-body" style="padding: 24px; overflow-y: auto; max-height: calc(88vh - 130px);">
       <!-- Dynamic Form / Content -->
     </div>
     <div id="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--sd-border); display: flex; justify-content: flex-end; gap: 12px; background: var(--sd-surface-subtle); border-radius: 0 0 var(--sd-radius-xl) var(--sd-radius-xl);">
-      <button class="btn btn-secondary" onclick="closeAppModal()">Cancel</button>
-      <button class="btn btn-primary" id="modal-confirm-btn">Confirm</button>
+      <button class="button button-secondary" type="button" id="modal-cancel-btn" onclick="closeAppModal()">Cancel</button>
+      <button class="button button-primary" type="button" id="modal-confirm-btn">Confirm</button>
     </div>
   </div>
 </div>
@@ -20,30 +20,51 @@
 <script>
   let modalConfirmCallback = null;
 
-  function showAppModal(title, bodyHtml, confirmText, onConfirm) {
+  function showAppModal(title, bodyHtml, confirmText, onConfirm, isLarge = false) {
     document.getElementById('modal-title').textContent = title || 'Action';
     document.getElementById('modal-body').innerHTML = bodyHtml || '';
     const confirmBtn = document.getElementById('modal-confirm-btn');
+    const cancelBtn = document.getElementById('modal-cancel-btn');
+    const modalContent = document.getElementById('global-modal-content');
+
+    if (modalContent) {
+      modalContent.classList.toggle('modal-lg', Boolean(isLarge));
+    }
 
     if (confirmText) {
       confirmBtn.textContent = confirmText;
       confirmBtn.style.display = 'inline-flex';
+      confirmBtn.disabled = false;
+      if (cancelBtn) {
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.disabled = false;
+      }
       modalConfirmCallback = onConfirm;
       confirmBtn.onclick = function() {
         if (modalConfirmCallback) modalConfirmCallback();
       };
     } else {
       confirmBtn.style.display = 'none';
+      if (cancelBtn) {
+        cancelBtn.textContent = 'Close';
+        cancelBtn.disabled = false;
+      }
     }
 
     const backdrop = document.getElementById('global-modal-backdrop');
-    backdrop.classList.add('active');
-    renderIconsInDOM(backdrop);
+    if (backdrop) {
+      backdrop.classList.add('active');
+      if (typeof renderIconsInDOM === 'function') {
+        renderIconsInDOM(backdrop);
+      }
+    }
   }
 
   function closeAppModal() {
     const backdrop = document.getElementById('global-modal-backdrop');
-    backdrop.classList.remove('active');
+    if (backdrop) {
+      backdrop.classList.remove('active');
+    }
     modalConfirmCallback = null;
   }
 
@@ -51,5 +72,40 @@
     if (e.target.id === 'global-modal-backdrop') {
       closeAppModal();
     }
+  }
+
+  /* In-modal interactive loading & feedback states */
+  function setModalLoading(isLoading, loadingText) {
+    const confirmBtn = document.getElementById('modal-confirm-btn');
+    const cancelBtn = document.getElementById('modal-cancel-btn');
+    if (!confirmBtn) return;
+
+    if (isLoading) {
+      confirmBtn.dataset.origText = confirmBtn.textContent;
+      confirmBtn.innerHTML = `<span class="sd-spinner"></span> <span>${loadingText || 'Saving…'}</span>`;
+      confirmBtn.disabled = true;
+      if (cancelBtn) cancelBtn.disabled = true;
+    } else {
+      confirmBtn.innerHTML = confirmBtn.dataset.origText || 'Confirm';
+      confirmBtn.disabled = false;
+      if (cancelBtn) cancelBtn.disabled = false;
+    }
+  }
+
+  function showModalStatus(msg, type = 'info') {
+    let el = document.getElementById('modal-inline-status');
+    const body = document.getElementById('modal-body');
+    if (!body) return;
+
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'modal-inline-status';
+      body.insertBefore(el, body.firstChild);
+    }
+    const bg = type === 'success' ? '#DCFCE7' : (type === 'error' ? '#FEE2E2' : '#EFF6FF');
+    const color = type === 'success' ? '#15803D' : (type === 'error' ? '#B91C1C' : '#1D4ED8');
+    const border = type === 'success' ? '#86EFAC' : (type === 'error' ? '#FCA5A5' : '#BFDBFE');
+    el.style.cssText = `margin-bottom:14px; padding:10px 14px; border-radius:8px; font-size:13px; font-weight:600; background:${bg}; color:${color}; border:1px solid ${border}; display:flex; align-items:center; gap:8px; animation:modalPopAnim 0.2s ease;`;
+    el.innerHTML = `${type === 'info' ? '<span class="sd-spinner"></span>' : (type === 'success' ? '✓' : '✕')} <span>${msg}</span>`;
   }
 </script>

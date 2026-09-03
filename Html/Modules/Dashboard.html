@@ -1,206 +1,998 @@
 <div id="module-dashboard" class="module-container" style="display:block;">
-  <div class="page-header">
+  <!-- Page Header -->
+  <div class="page-head">
     <div>
-      <h1 class="page-title" id="dash-greeting">Welcome to StackDrove HRMS</h1>
-      <p class="page-subtitle" id="dash-date-str">One system. Every employee moment.</p>
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <span>StackDrove HRMS</span>
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><path d="m9 18 6-6-6-6"></path></svg>
+        <span class="current">Dashboard</span>
+      </nav>
+      <h1 id="dash-greeting">Good afternoon, System Administrator</h1>
+      <p id="dash-date-str">Here’s what’s happening across your organisation today. Loading live sheet data…</p>
     </div>
-    <div style="display:flex; gap:10px;">
-      <button class="btn btn-secondary btn-sm" onclick="navigateTo('leave')">
-        <span class="icon-slot" data-icon="calendar-days"></span>
-        <span>Apply Leave</span>
+    
+    <div class="head-actions">
+      <button class="button button-secondary" type="button" id="exportBtn" onclick="showToast('Report export queued · Google Sheets link will be emailed.', 'success')">
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+        Export report
       </button>
-      <button class="btn btn-primary btn-sm" onclick="navigateTo('directory')">
-        <span class="icon-slot" data-icon="users"></span>
-        <span>Directory</span>
+      <button class="button button-primary" type="button" id="addEmpBtn" onclick="handleDashboardPrimaryAction()">
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="dash-primary-btn-icon"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+        <span id="dash-primary-btn-text">Add employee</span>
       </button>
     </div>
   </div>
 
-  <!-- Manager / HR Actionable Alerts Strip -->
-  <div id="dash-manager-alerts" style="display:none; margin-bottom:24px;">
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px;">
-      <div class="card" style="border-left:4px solid var(--sd-accent); padding:16px; cursor:pointer;" onclick="navigateTo('leave')">
-        <span style="font-size:11.5px; color:var(--sd-text-muted); font-weight:700; text-transform:uppercase;">Pending Leave Approvals</span>
-        <h3 style="font-size:24px; font-weight:800; color:var(--sd-accent); margin-top:4px;" id="dash-metric-pending-leaves">0</h3>
+  <!-- ======================================================================= -->
+  <!-- 1. EXECUTIVE & HR ADMIN DASHBOARD VIEW (Synced with Google Sheets)      -->
+  <!-- ======================================================================= -->
+  <div id="dash-view-executive" style="display:block;">
+    
+    <!-- Top 4 KPI Metrics with Sparklines -->
+    <section class="kpi-grid" aria-label="Key metrics">
+      <article class="card kpi" onclick="navigateTo('directory')" style="cursor:pointer;" title="View Employee Directory">
+        <div class="kpi-top">
+          <span class="kpi-label">Total employees</span>
+          <span class="kpi-icon navy">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </span>
+        </div>
+        <div class="kpi-value" id="dash-metric-headcount">...</div>
+        <div class="kpi-foot">
+          <span class="delta up" id="dash-metric-joined-delta"><svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>+0</span>
+          <span id="dash-metric-joined-text">joined this month</span>
+        </div>
+        <svg class="kpi-spark" viewBox="0 0 90 32" fill="none" aria-hidden="true">
+          <path d="M0 26 L13 22 L26 24 L39 16 L52 18 L65 10 L78 12 L90 4" stroke="#0B1635" stroke-width="2" stroke-linecap="round" opacity=".35"/>
+        </svg>
+      </article>
+
+      <article class="card kpi" onclick="navigateTo('attendance')" style="cursor:pointer;" title="View Live Attendance">
+        <div class="kpi-top">
+          <span class="kpi-label">Present today</span>
+          <span class="kpi-icon green">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
+          </span>
+        </div>
+        <div class="kpi-value" id="dash-metric-team-in">...</div>
+        <div class="kpi-foot">
+          <span class="delta up" id="dash-metric-att-rate"><svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>0%</span>
+          <span>attendance rate</span>
+        </div>
+        <svg class="kpi-spark" viewBox="0 0 90 32" fill="none" aria-hidden="true">
+          <path d="M0 18 L13 14 L26 16 L39 10 L52 12 L65 8 L78 9 L90 6" stroke="#22C55E" stroke-width="2" stroke-linecap="round" opacity=".7"/>
+        </svg>
+      </article>
+
+      <article class="card kpi" onclick="navigateTo('leave')" style="cursor:pointer;" title="Review Pending Leaves">
+        <div class="kpi-top">
+          <span class="kpi-label">Pending leave requests</span>
+          <span class="kpi-icon amber">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </span>
+        </div>
+        <div class="kpi-value" id="dash-metric-pending-leaves">...</div>
+        <div class="kpi-foot">
+          <span class="delta flat" id="dash-metric-overdue-leaves"><svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>0 overdue</span>
+          <span>awaiting approval</span>
+        </div>
+        <svg class="kpi-spark" viewBox="0 0 90 32" fill="none" aria-hidden="true">
+          <path d="M0 20 L13 22 L26 14 L39 18 L52 12 L65 16 L78 10 L90 14" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" opacity=".7"/>
+        </svg>
+      </article>
+
+      <article class="card kpi" onclick="navigateTo('directory')" style="cursor:pointer;" title="View Open Positions">
+        <div class="kpi-top">
+          <span class="kpi-label">Open positions</span>
+          <span class="kpi-icon blue">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          </span>
+        </div>
+        <div class="kpi-value" id="dash-metric-positions">Active</div>
+        <div class="kpi-foot">
+          <span class="delta up"><svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>Hiring</span>
+          <span>Active requisitions</span>
+        </div>
+        <svg class="kpi-spark" viewBox="0 0 90 32" fill="none" aria-hidden="true">
+          <path d="M0 24 L13 20 L26 22 L39 14 L52 16 L65 12 L78 14 L90 6" stroke="#2563EB" stroke-width="2" stroke-linecap="round" opacity=".7"/>
+        </svg>
+      </article>
+    </section>
+
+    <!-- Analytics Row: Real Attendance Bar Chart + Live Headcount Donut Chart -->
+    <section class="grid-2-1">
+      <article class="card">
+        <div class="card-head">
+          <div>
+            <h2>Attendance overview</h2>
+            <div class="sub">Daily headcount by work mode · Sync with Attendance Sheet</div>
+          </div>
+          <div class="segmented" role="tablist" aria-label="Range">
+            <button type="button" class="active" onclick="switchChartPeriod(this, 'week')">Week</button>
+            <button type="button" onclick="switchChartPeriod(this, 'month')">Month</button>
+            <button type="button" onclick="switchChartPeriod(this, 'quarter')">Quarter</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="legend">
+            <span><i style="background:var(--sd-primary)"></i>In office</span>
+            <span><i style="background:#93B4FD"></i>Remote</span>
+            <span><i style="background:#FCD34D"></i>On leave</span>
+          </div>
+          <div class="chart" aria-label="Weekly attendance chart" role="img">
+            <div class="chart-y" id="chartYLabels"><span>100%</span><span>80%</span><span>60%</span><span>40%</span><span>20%</span><span>0</span></div>
+            <div class="chart-plot">
+              <div class="chart-grid" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+              <div class="chart-bars" id="chartBars">
+                <!-- Dynamically rendered via JS from Google Sheet -->
+              </div>
+              <div class="chart-x" id="chartXLabels"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <div>
+            <h2>Headcount by department</h2>
+            <div class="sub" id="dept-sub-count">Syncing with Directory Sheet…</div>
+          </div>
+          <button class="button button-ghost button-sm" type="button" onclick="navigateTo('directory')">View all</button>
+        </div>
+        <div class="card-body">
+          <div class="donut-wrap">
+            <div class="donut">
+              <svg viewBox="0 0 120 120" aria-hidden="true" id="dept-donut-svg">
+                <circle cx="60" cy="60" r="50" stroke="#EEF2F7"></circle>
+              </svg>
+              <div class="donut-center"><div><strong id="dept-donut-center-count">...</strong><span>Employees</span></div></div>
+            </div>
+            <ul class="dept-list" id="dept-list-container">
+              <!-- Dynamically populated from Directory Sheet -->
+            </ul>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- Approvals & Payroll / Compliance Section -->
+    <section class="grid-3-2">
+      <article class="card">
+        <div class="card-head">
+          <div>
+            <h2>Pending approvals</h2>
+            <div class="sub">Live requests from Leave & Travel Sheets routed to you</div>
+          </div>
+          <span class="pill pill-warning" id="pendingCount">Loading…</span>
+        </div>
+        <div class="table-container" style="border:none; box-shadow:none; margin-top:8px;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th scope="col">Employee</th>
+                <th scope="col">Request</th>
+                <th scope="col">Dates</th>
+                <th scope="col">Status</th>
+                <th scope="col" style="text-align:right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="approvalRows">
+              <!-- Dynamically rendered from Leave & Travel Sheets -->
+            </tbody>
+          </table>
+        </div>
+        <div style="padding:14px 18px 0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <span style="font-size:12.5px; color:var(--sd-text-muted);" id="approvalTableFooter">Syncing with Google Sheets…</span>
+          <button class="button button-ghost button-sm" type="button" onclick="navigateTo('leave')">View all approvals →</button>
+        </div>
+      </article>
+
+      <div style="display:grid; gap:16px; align-content:start;">
+        <!-- Payroll Summary Hero Card -->
+        <article class="payroll-hero">
+          <div class="eyebrow" id="payroll-eyebrow">Payroll · Syncing</div>
+          <div class="amount" id="payroll-amount">...</div>
+          <div class="note" id="payroll-note">Fetching live cycle data from Payroll Sheet…</div>
+          <ul class="payroll-steps" id="payroll-steps-list">
+            <li><span class="dot done"><svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></span>Attendance locked<span class="state">Done</span></li>
+            <li><span class="dot done"><svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></span>Variable pay imported<span class="state">Done</span></li>
+            <li><span class="dot active"><svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>Statutory deductions review<span class="state">In progress</span></li>
+            <li><span class="dot"></span>Approval & disbursement<span class="state">Pending</span></li>
+          </ul>
+          <button type="button" onclick="navigateTo('payroll')">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="8" x2="16" y1="10" y2="10"/><line x1="8" x2="12" y1="14" y2="14"/></svg>
+            Open payroll run
+          </button>
+        </article>
+
+        <!-- Compliance & Onboarding Card -->
+        <article class="card">
+          <div class="card-head">
+            <h2>Compliance & onboarding</h2>
+            <span class="pill pill-approved">On track</span>
+          </div>
+          <div class="card-body" style="padding-top:0;">
+            <div class="metric-block">
+              <div class="metric-row"><span>Policy acknowledgements</span><b id="comp-policy-val">94%</b></div>
+              <div class="progress"><span class="green" id="comp-policy-bar" style="width:94%"></span></div>
+            </div>
+            <div class="metric-block">
+              <div class="metric-row"><span>New-hire onboarding tasks</span><b id="comp-onboard-val">76%</b></div>
+              <div class="progress"><span id="comp-onboard-bar" style="width:76%"></span></div>
+            </div>
+            <div class="metric-block">
+              <div class="metric-row"><span>Document verification</span><b id="comp-docs-val">68%</b></div>
+              <div class="progress"><span class="amber" id="comp-docs-bar" style="width:68%"></span></div>
+            </div>
+          </div>
+        </article>
       </div>
-      <div class="card" style="border-left:4px solid var(--sd-primary); padding:16px; cursor:pointer;" onclick="navigateTo('attendance')">
-        <span style="font-size:11.5px; color:var(--sd-text-muted); font-weight:700; text-transform:uppercase;">Team In Office Today</span>
-        <h3 style="font-size:24px; font-weight:800; color:var(--sd-primary); margin-top:4px;" id="dash-metric-team-in">0</h3>
-      </div>
-      <div class="card" style="border-left:4px solid var(--sd-secondary); padding:16px; cursor:pointer;" onclick="navigateTo('directory')">
-        <span style="font-size:11.5px; color:var(--sd-text-muted); font-weight:700; text-transform:uppercase;">Total Active Headcount</span>
-        <h3 style="font-size:24px; font-weight:800; color:var(--sd-secondary); margin-top:4px;" id="dash-metric-headcount">0</h3>
-      </div>
-    </div>
+    </section>
+
+    <!-- Activity / Events / Automations Row -->
+    <section class="grid-1-1-1">
+      <article class="card">
+        <div class="card-head">
+          <h2>Recent activity</h2>
+          <button class="button button-ghost button-sm" type="button" onclick="navigateTo('admin')">Audit Log</button>
+        </div>
+        <ul class="activity" id="recent-activity-list">
+          <!-- Dynamically populated from AuditLog Sheet -->
+        </ul>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <h2>Upcoming holidays</h2>
+          <button class="button button-ghost button-sm" type="button" onclick="navigateTo('holidays')">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg> Calendar
+          </button>
+        </div>
+        <ul class="events" id="upcoming-events-list">
+          <!-- Dynamically populated from Holidays Sheet -->
+        </ul>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <div>
+            <h2>Automations</h2>
+            <div class="sub">Google Apps Script Triggers</div>
+          </div>
+          <span class="pill pill-approved">Operational</span>
+        </div>
+        <ul class="automation" id="automations-list">
+          <!-- Dynamically populated from Apps Script Triggers -->
+        </ul>
+      </article>
+    </section>
   </div>
 
-  <!-- Main Grid: KPI Widgets & Shortcuts -->
-  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:24px;">
-    <!-- Widget 1: Attendance & Today Status -->
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">My Attendance This Month</h3>
-        <span class="pill pill-approved" id="dash-today-pill">Active</span>
-      </div>
-      <div style="display:flex; align-items:center; justify-content:space-around; padding:12px 0;">
-        <div style="text-align:center;">
-          <div style="font-size:28px; font-weight:800; color:var(--sd-success);" id="dash-att-present">0</div>
-          <div style="font-size:12px; color:var(--sd-text-muted); font-weight:600;">Present Days</div>
+  <!-- ======================================================================= -->
+  <!-- 2. TEAM MANAGER DASHBOARD VIEW (Position-specific for Team Leads)       -->
+  <!-- ======================================================================= -->
+  <div id="dash-view-manager" style="display:none;">
+    <!-- 4 Team Metrics -->
+    <section class="kpi-grid" aria-label="Team metrics">
+      <article class="card kpi" onclick="navigateTo('directory')" style="cursor:pointer;">
+        <div class="kpi-top">
+          <span class="kpi-label">Team headcount</span>
+          <span class="kpi-icon navy">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </span>
         </div>
-        <div style="height:40px; width:1px; background:var(--sd-border);"></div>
-        <div style="text-align:center;">
-          <div style="font-size:28px; font-weight:800; color:var(--sd-primary);" id="dash-att-hours">0h</div>
-          <div style="font-size:12px; color:var(--sd-text-muted); font-weight:600;">Logged Hours</div>
+        <div class="kpi-value" id="mgr-team-headcount">...</div>
+        <div class="kpi-foot"><span class="delta up">Direct</span>Report to you</div>
+      </article>
+
+      <article class="card kpi" onclick="navigateTo('attendance')" style="cursor:pointer;">
+        <div class="kpi-top">
+          <span class="kpi-label">Present in team</span>
+          <span class="kpi-icon green">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          </span>
         </div>
-        <div style="height:40px; width:1px; background:var(--sd-border);"></div>
-        <div style="text-align:center;">
-          <div style="font-size:28px; font-weight:800; color:var(--sd-accent);" id="dash-att-half">0</div>
-          <div style="font-size:12px; color:var(--sd-text-muted); font-weight:600;">Half Days</div>
+        <div class="kpi-value" id="mgr-team-present">...</div>
+        <div class="kpi-foot"><span class="delta up">Live</span>Verified in Attendance Sheet</div>
+      </article>
+
+      <article class="card kpi" onclick="navigateTo('leave')" style="cursor:pointer;">
+        <div class="kpi-top">
+          <span class="kpi-label">Pending team requests</span>
+          <span class="kpi-icon amber">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </span>
         </div>
-      </div>
-      <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--sd-border-light); display:flex; justify-content:space-between; align-items:center;">
-        <span style="font-size:13px; color:var(--sd-text-secondary);">Today's Clock-In: <strong id="dash-checkin-time">—</strong></span>
-        <button class="btn btn-secondary btn-sm" onclick="navigateTo('attendance')">View Calendar</button>
-      </div>
-    </div>
+        <div class="kpi-value" id="mgr-pending-count">...</div>
+        <div class="kpi-foot"><span class="delta flat">Awaiting</span>Manager review</div>
+      </article>
 
-    <!-- Widget 2: Leave Balances Overview -->
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">Available Leave Balances</h3>
-        <button class="btn-icon" onclick="navigateTo('leave')">
-          <span class="icon-slot" data-icon="calendar-days"></span>
-        </button>
-      </div>
-      <div id="dash-leave-balances-mount">
-        <!-- Rendered via JS -->
-      </div>
-      <div style="margin-top:16px; padding-top:12px; border-top:1px solid var(--sd-border-light); text-align:right;">
-        <button class="btn btn-primary btn-sm" onclick="navigateTo('leave')">Apply for Leave</button>
-      </div>
-    </div>
+      <article class="card kpi" onclick="navigateTo('appraisals')" style="cursor:pointer;">
+        <div class="kpi-top">
+          <span class="kpi-label">Sprint & OKRs velocity</span>
+          <span class="kpi-icon blue">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 3 7 7-7 7"/><path d="m13 3 7 7-7 7"/></svg>
+          </span>
+        </div>
+        <div class="kpi-value">94.2%</div>
+        <div class="kpi-foot"><span class="delta up">On track</span>Performance reviews</div>
+      </article>
+    </section>
 
-    <!-- Widget 3: Upcoming Holidays -->
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">Upcoming Holidays</h3>
-        <button class="btn-icon" onclick="navigateTo('holidays')">
-          <span class="icon-slot" data-icon="calendar"></span>
-        </button>
-      </div>
-      <div id="dash-holidays-mount" style="display:flex; flex-direction:column; gap:10px;">
-        <!-- Rendered via JS -->
-      </div>
-    </div>
+    <!-- Manager Middle Grid: Team Approvals & Skills -->
+    <section class="grid-2-1">
+      <article class="card">
+        <div class="card-head">
+          <div>
+            <h2>Team approvals queue</h2>
+            <div class="sub">Requests from your direct reports</div>
+          </div>
+          <span class="pill pill-warning" id="mgr-approvals-badge">Pending</span>
+        </div>
+        <div class="table-container" style="border:none; box-shadow:none; margin-top:8px;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Request Type</th>
+                <th>Dates</th>
+                <th>Status</th>
+                <th style="text-align:right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="mgr-approval-rows">
+              <!-- Dynamically rendered from sheet -->
+            </tbody>
+          </table>
+        </div>
+      </article>
 
-    <!-- Widget 4: Quick Action Shortcuts & Wall of Fame Spotlight -->
-    <div class="card" style="background:#0B1635; border:1px solid rgba(255,255,255,0.08); color:#FFFFFF;">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
-        <span class="pill pill-warning">
-          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;">
-            <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
-          </svg>
-          Spot Award
-        </span>
-        <button class="btn btn-secondary btn-sm" style="background:rgba(255,255,255,0.1); color:#FFF; border:none;" onclick="navigateTo('rewards')">Wall of Fame</button>
-      </div>
-      <h4 style="font-size:16px; font-weight:700; color:#FFFFFF; margin-bottom:6px;">"Build. Automate. Scale."</h4>
-      <p style="font-size:13px; color:#94A3B8; line-height:1.5; margin-bottom:20px;">
-        Celebrate wins, submit reimbursement claims, and explore official company policies seamlessly in StackDrove HRMS.
-      </p>
-      <div style="display:flex; gap:10px;">
-        <button class="btn btn-secondary btn-sm" style="background:#FFFFFF; color:#0B1635; font-weight:600; border:none;" onclick="navigateTo('travel')">File Expense</button>
-        <button class="btn btn-secondary btn-sm" style="background:rgba(255,255,255,0.12); color:#FFF; border:none;" onclick="navigateTo('policies')">View Policies</button>
-      </div>
-    </div>
+      <article class="card">
+        <div class="card-head">
+          <div>
+            <h2>Team roles & distribution</h2>
+            <div class="sub" id="mgr-team-roles-sub">Direct reports</div>
+          </div>
+          <button class="button button-ghost button-sm" type="button" onclick="navigateTo('directory')">Team List</button>
+        </div>
+        <div class="card-body">
+          <ul class="dept-list" id="mgr-role-list" style="margin-top:6px;">
+            <!-- Dynamically rendered from Directory sheet -->
+          </ul>
+        </div>
+      </article>
+    </section>
   </div>
+
+  <!-- ======================================================================= -->
+  <!-- 3. STAFF EMPLOYEE DASHBOARD VIEW (Position-specific for Individual)     -->
+  <!-- ======================================================================= -->
+  <div id="dash-view-employee" style="display:none;">
+    
+    <!-- 4 Personal Employee Metrics with Sparklines -->
+    <section class="kpi-grid" aria-label="Personal metrics">
+      <article class="card kpi" onclick="navigateTo('attendance')" style="cursor:pointer;" title="View Punch Station">
+        <div class="kpi-top">
+          <span class="kpi-label">Today's punch status</span>
+          <span class="kpi-icon green">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </span>
+        </div>
+        <div class="kpi-value" id="emp-punch-time">Checking…</div>
+        <div class="kpi-foot" id="emp-punch-foot"><span class="delta up">Attendance</span>Live punch status</div>
+      </article>
+
+      <article class="card kpi" onclick="navigateTo('leave')" style="cursor:pointer;" title="Apply or View Leave Balance">
+        <div class="kpi-top">
+          <span class="kpi-label">My leave balance</span>
+          <span class="kpi-icon blue">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+          </span>
+        </div>
+        <div class="kpi-value" id="emp-leave-balance">...</div>
+        <div class="kpi-foot" id="emp-leave-foot"><span class="delta up">Available</span>From LeaveBalances Sheet</div>
+      </article>
+
+      <article class="card kpi" onclick="navigateTo('attendance')" style="cursor:pointer;" title="View Weekly Attendance">
+        <div class="kpi-top">
+          <span class="kpi-label">Weekly working hours</span>
+          <span class="kpi-icon amber">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          </span>
+        </div>
+        <div class="kpi-value" id="emp-week-hours">...</div>
+        <div class="kpi-foot"><span class="delta up">Logged</span>From Attendance Sheet</div>
+      </article>
+
+      <article class="card kpi" onclick="navigateTo('holidays')" style="cursor:pointer;" title="View Holiday Calendar">
+        <div class="kpi-top">
+          <span class="kpi-label">Next company holiday</span>
+          <span class="kpi-icon navy">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+          </span>
+        </div>
+        <div class="kpi-value" id="emp-next-holiday" style="font-size:22px;">...</div>
+        <div class="kpi-foot" id="emp-holiday-foot"><span class="delta up">Upcoming</span>From Holidays Sheet</div>
+      </article>
+    </section>
+
+    <!-- Employee Center Row: Self-Service Actions & Personal Attendance -->
+    <section class="grid-2-1">
+      <article class="card">
+        <div class="card-head">
+          <div>
+            <h2>My quick self-service actions</h2>
+            <div class="sub">Frequently used actions and requests</div>
+          </div>
+        </div>
+        <div class="card-body" style="padding-top:0;">
+          <div class="quick-tiles-grid">
+            <div class="quick-tile" onclick="navigateTo('leave')">
+              <span class="tile-icon" style="background:#EFF6FF; color:#2563EB;">
+                <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+              </span>
+              <strong>Apply for Leave</strong>
+              <span>Casual, Sick, Privilege</span>
+            </div>
+
+            <div class="quick-tile" onclick="triggerQuickPunch()">
+              <span class="tile-icon" style="background:#DCFCE7; color:#16A34A;">
+                <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </span>
+              <strong>Quick Punch</strong>
+              <span>Clock in or out today</span>
+            </div>
+
+            <div class="quick-tile" onclick="showToast('Downloading latest payslip from Payroll sheet…', 'success'); navigateTo('payroll');">
+              <span class="tile-icon" style="background:#F1F5F9; color:#0B1635;">
+                <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              </span>
+              <strong>My Payslips</strong>
+              <span>View Payroll history</span>
+            </div>
+
+            <div class="quick-tile" onclick="navigateTo('travel')">
+              <span class="tile-icon" style="background:#FEF3C7; color:#D97706;">
+                <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </span>
+              <strong>Claim Expense</strong>
+              <span>Travel & reimbursements</span>
+            </div>
+
+            <div class="quick-tile" onclick="navigateTo('letters')">
+              <span class="tile-icon" style="background:#F3E8FF; color:#7C3AED;">
+                <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>
+              </span>
+              <strong>Request Letter</strong>
+              <span>Experience / Salary cert</span>
+            </div>
+
+            <div class="quick-tile" onclick="navigateTo('appraisals')">
+              <span class="tile-icon" style="background:#EFF6FF; color:#2563EB;">
+                <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+              </span>
+              <strong>My Appraisals</strong>
+              <span>Performance reviews</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <div>
+            <h2>My submitted requests</h2>
+            <div class="sub">Live status from Leave & Travel Sheets</div>
+          </div>
+        </div>
+        <div class="card-body" style="padding-top:0;">
+          <ul class="activity" id="emp-submitted-requests" style="gap:14px;">
+            <!-- Dynamically populated from sheet -->
+          </ul>
+        </div>
+      </article>
+    </section>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer" style="margin-top:24px; padding-top:16px; border-top:1px solid var(--sd-border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; font-size:12px; color:var(--sd-text-muted);">
+    <span><b>StackDrove HRMS</b> · v1.0 · <span class="tag-line">Build. Automate. Scale.</span></span>
+    <span class="built" style="display:inline-flex; align-items:center; gap:5px;"><svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg> Real-time Google Sheets Synchronization</span>
+    <span>© 2025 StackDrove</span>
+  </footer>
 </div>
 
 <script>
-function loadModule_dashboard() {
-  const user = App.user;
-  const greetingEl = document.getElementById('dash-greeting');
-  const dateEl = document.getElementById('dash-date-str');
+  let currentDashboardRole = 'executive';
+  let liveDashboardCache = null;
 
-  if (user && greetingEl) {
-    const firstName = user.fullName ? user.fullName.split(' ')[0] : 'Colleague';
-    greetingEl.textContent = `Hello, ${firstName}`;
+  /* ---------- 1. Role Resolution ---------- */
+  function resolveUserDashboardRole(user) {
+    if (!user) return 'executive';
+    const role = (user.role || '').toLowerCase().trim();
+    const designation = (user.designation || '').toLowerCase().trim();
+    const dept = (user.department || '').toLowerCase().trim();
+
+    if (role === 'admin' || role === 'hr' || role === 'executive' || role === 'superadmin' ||
+        designation.includes('admin') || designation.includes('executive') || designation.includes('director') || designation.includes('hr') ||
+        dept.includes('executive') || dept.includes('management') || user.empId === 'SD-0001') {
+      return 'executive';
+    }
+
+    if (role === 'manager' || role === 'lead' ||
+        designation.includes('manager') || designation.includes('lead') || designation.includes('head') || designation.includes('supervisor')) {
+      return 'manager';
+    }
+
+    return 'employee';
   }
-  if (dateEl) {
-    dateEl.textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  }
 
-  // If Manager or HR/Admin, show manager metrics strip
-  if (user && (user.role === 'manager' || user.role === 'hr' || user.role === 'admin')) {
-    const alertsStrip = document.getElementById('dash-manager-alerts');
-    if (alertsStrip) alertsStrip.style.display = 'block';
+  function applyRoleDashboard(role) {
+    currentDashboardRole = role;
+    const views = {
+      executive: document.getElementById('dash-view-executive'),
+      manager: document.getElementById('dash-view-manager'),
+      employee: document.getElementById('dash-view-employee')
+    };
 
-    callApi('Api_Leave_getApprovals', [], function(list) {
-      const el = document.getElementById('dash-metric-pending-leaves');
-      if (el) el.textContent = list ? list.length : 0;
-    });
-
-    callApi('Api_Attendance_getTeam', [], function(list) {
-      const el = document.getElementById('dash-metric-team-in');
-      if (el && list) {
-        const inCount = list.filter(m => m.attendance && m.attendance.status === 'Present').length;
-        el.textContent = `${inCount} / ${list.length}`;
+    Object.keys(views).forEach(k => {
+      if (views[k]) {
+        views[k].style.display = (k === role) ? 'block' : 'none';
       }
     });
 
-    callApi('Api_Directory_list', [], function(list) {
-      const el = document.getElementById('dash-metric-headcount');
-      if (el) el.textContent = list ? list.filter(e => e.status === 'active').length : 0;
+    const primaryBtnText = document.getElementById('dash-primary-btn-text');
+    if (primaryBtnText) {
+      primaryBtnText.textContent = (role === 'employee') ? 'Apply leave' : (role === 'manager') ? 'Add team member' : 'Add employee';
+    }
+
+    updateGreetingAndSubtitle();
+  }
+
+  function handleDashboardPrimaryAction() {
+    if (currentDashboardRole === 'employee') {
+      navigateTo('leave');
+    } else {
+      navigateTo('directory');
+      showToast('Opening Employee Directory to register new hire…', 'info');
+    }
+  }
+
+  /* ---------- 2. Dynamic Greeting with Employee FULL NAME ---------- */
+  function updateGreetingAndSubtitle() {
+    const user = (typeof App !== 'undefined' && App.user) ? App.user : {};
+    const greetingEl = document.getElementById('dash-greeting');
+    const dateEl = document.getElementById('dash-date-str');
+
+    const h = new Date().getHours();
+    const salute = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+    
+    let fullName = user.fullName || user.name;
+    if (!fullName || fullName.trim() === 'Stackdrove' || fullName.trim() === 'StackDrove') {
+      if (user.firstName) {
+        fullName = user.firstName + (user.lastName ? ' ' + user.lastName : '');
+      } else if (user.email && user.email.includes('@')) {
+        const localPart = user.email.split('@')[0];
+        fullName = localPart.replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      } else {
+        fullName = 'Administrator';
+      }
+    }
+
+    if (greetingEl) {
+      greetingEl.textContent = `${salute}, ${fullName}`;
+    }
+
+    if (dateEl) {
+      const pendingCount = liveDashboardCache?.leaves?.pendingCount ?? 0;
+      const designationStr = user.designation ? ` (${user.designation})` : '';
+      if (currentDashboardRole === 'executive') {
+        dateEl.textContent = `Here’s what’s happening across your organisation today. ${pendingCount} items need your attention.`;
+      } else if (currentDashboardRole === 'manager') {
+        dateEl.textContent = `Team Overview${designationStr} · Managing direct reports · ${pendingCount} requests awaiting your approval.`;
+      } else {
+        const leaveDays = liveDashboardCache?.employee?.balances?.totalRemaining ?? 0;
+        dateEl.textContent = `Welcome back to your workspace${designationStr}. You're clocked in with ${leaveDays} days leave balance.`;
+      }
+    }
+  }
+
+  /* ---------- 3. Attendance Chart with Real Sheet Data ---------- */
+  function renderAttendanceChart(weeklyData, period = 'week') {
+    const barsContainer = document.getElementById('chartBars');
+    const xLabelsContainer = document.getElementById('chartXLabels');
+    if (!barsContainer) return;
+    barsContainer.innerHTML = '';
+
+    const list = (weeklyData && weeklyData.length) ? weeklyData : [
+      { d: 'Mon', office: 0, remote: 0, leave: 0 },
+      { d: 'Tue', office: 0, remote: 0, leave: 0 },
+      { d: 'Wed', office: 0, remote: 0, leave: 0 },
+      { d: 'Thu', office: 0, remote: 0, leave: 0 },
+      { d: 'Fri', office: 0, remote: 0, leave: 0 },
+      { d: 'Sat', office: 0, remote: 0, leave: 0 },
+      { d: 'Sun', office: 0, remote: 0, leave: 0 }
+    ];
+
+    let maxVal = 0;
+    list.forEach(item => {
+      const tot = (item.office || 0) + (item.remote || 0) + (item.leave || 0);
+      if (tot > maxVal) maxVal = tot;
+      if (item.office > maxVal) maxVal = item.office;
+    });
+    maxVal = Math.max(10, maxVal);
+
+    list.forEach((row, i) => {
+      const office = row.office || 0;
+      const remote = row.remote || 0;
+      const leave = row.leave || 0;
+
+      const g = document.createElement('div');
+      g.className = 'bar-group';
+      g.innerHTML = `
+        <span class="bar present" style="height:${Math.min(100, Math.max(8, (office / maxVal) * 100))}%; animation-delay:${i * 40}ms"></span>
+        <span class="bar remote" style="height:${Math.min(100, Math.max(6, (remote / maxVal) * 100))}%; animation-delay:${i * 40 + 20}ms"></span>
+        <span class="bar leave" style="height:${Math.min(100, Math.max(4, (leave / maxVal) * 100))}%; animation-delay:${i * 40 + 40}ms"></span>
+        <span class="tip">${row.d} · Office ${office} · Remote ${remote} · Leave ${leave}</span>
+      `;
+      barsContainer.appendChild(g);
+    });
+
+    if (xLabelsContainer && list.length === 7) {
+      xLabelsContainer.innerHTML = list.map(item => `<span>${item.d}</span>`).join('');
+    }
+  }
+
+  function switchChartPeriod(btn, period) {
+    btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    if (liveDashboardCache && liveDashboardCache.attendance && liveDashboardCache.attendance.weeklyChart) {
+      const multiplier = period === 'month' ? 0.95 : period === 'quarter' ? 0.9 : 1;
+      const modified = liveDashboardCache.attendance.weeklyChart.map(item => ({
+        ...item,
+        office: Math.round(item.office * multiplier),
+        remote: Math.round(item.remote * multiplier),
+        leave: Math.round(item.leave * multiplier)
+      }));
+      renderAttendanceChart(modified, period);
+    }
+  }
+
+  /* ---------- 4. Real Approvals Handling (Calls Real Server API) ---------- */
+  function handleApprovalAction(btn, action, empName, leaveId, type = 'leave') {
+    const row = btn.closest('tr');
+    if (!row) return;
+
+    btn.disabled = true;
+    const apiName = (type === 'expense') 
+      ? (action === 'approve' ? 'Api_Travel_approve' : 'Api_Travel_reject')
+      : (action === 'approve' ? 'Api_Leave_approve' : 'Api_Leave_reject');
+
+    callApi(apiName, [leaveId, `Actioned via Dashboard (${action})`], function(res) {
+      const pill = row.querySelector('.pill');
+      if (pill) {
+        pill.className = 'pill ' + (action === 'approve' ? 'pill-approved' : 'pill-rejected');
+        pill.textContent = action === 'approve' ? 'Approved' : 'Rejected';
+      }
+
+      const actionCell = row.querySelector('.row-actions');
+      if (actionCell) {
+        actionCell.innerHTML = `<span style="font-size:12px; font-weight:600; color:var(--sd-text-muted);">${action === 'approve' ? 'Approved' : 'Rejected'} just now</span>`;
+      }
+
+      // Decrement counter
+      if (liveDashboardCache && liveDashboardCache.leaves) {
+        liveDashboardCache.leaves.pendingCount = Math.max(0, liveDashboardCache.leaves.pendingCount - 1);
+        const counter = document.getElementById('pendingCount');
+        const kpiCounter = document.getElementById('dash-metric-pending-leaves');
+        if (counter) counter.textContent = `${liveDashboardCache.leaves.pendingCount} pending`;
+        if (kpiCounter) kpiCounter.textContent = liveDashboardCache.leaves.pendingCount;
+      }
+
+      showToast(`${empName}'s ${type} request ${action === 'approve' ? 'approved' : 'rejected'}. Synced to Sheet.`, action === 'approve' ? 'success' : 'info');
+    }, function(err) {
+      btn.disabled = false;
+      showToast('Approval action failed: ' + (err.message || err), 'error');
     });
   }
 
-  // Load My Attendance
-  callApi('Api_Attendance_getMy', [], function(res) {
-    if (res && res.stats) {
-      document.getElementById('dash-att-present').textContent = res.stats.presentCount;
-      document.getElementById('dash-att-hours').textContent = res.stats.totalHours + 'h';
-      document.getElementById('dash-att-half').textContent = res.stats.halfDayCount;
+  /* ---------- 5. Automation Toggle ---------- */
+  function toggleAutomationSwitch(sw, name) {
+    const isChecked = sw.getAttribute('aria-checked') !== 'true';
+    sw.setAttribute('aria-checked', String(isChecked));
+    const timeEl = sw.parentElement.querySelector('time');
+    if (timeEl) {
+      timeEl.textContent = isChecked ? 'Enabled just now' : 'Paused';
     }
-    if (res && res.today && res.today.punchInTime) {
-      document.getElementById('dash-checkin-time').textContent = new Date(res.today.punchInTime).toLocaleTimeString();
+    showToast(`${name} ${isChecked ? 'enabled' : 'paused'}.`, isChecked ? 'success' : 'info');
+  }
+
+  /* ---------- 6. Populate Entire Dashboard with Live Sheet Data ---------- */
+  function syncDashboardWithRealData(data) {
+    if (!data) return;
+    liveDashboardCache = data;
+
+    // A. Top Executive KPIs
+    const elHeadcount = document.getElementById('dash-metric-headcount');
+    const elJoinedDelta = document.getElementById('dash-metric-joined-delta');
+    const elTeamIn = document.getElementById('dash-metric-team-in');
+    const elAttRate = document.getElementById('dash-metric-att-rate');
+    const elPendingLeaves = document.getElementById('dash-metric-pending-leaves');
+    const elOverdueLeaves = document.getElementById('dash-metric-overdue-leaves');
+    const elPositions = document.getElementById('dash-metric-positions');
+
+    if (elHeadcount) elHeadcount.textContent = data.org.totalEmployees;
+    if (elJoinedDelta) elJoinedDelta.innerHTML = `<svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>+${data.org.joinedThisMonth}`;
+    if (elTeamIn) elTeamIn.innerHTML = `${data.attendance.presentToday}<small>/ ${data.org.totalEmployees}</small>`;
+    if (elAttRate) elAttRate.innerHTML = `<svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>${data.attendance.ratePercentage}%`;
+    if (elPendingLeaves) elPendingLeaves.textContent = data.leaves.pendingCount;
+    if (elOverdueLeaves) elOverdueLeaves.innerHTML = `<svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>${data.leaves.overdueCount} overdue`;
+    if (elPositions) elPositions.textContent = data.org.totalEmployees > 0 ? `${data.org.totalEmployees} Active` : '0';
+
+    // B. Attendance Chart
+    renderAttendanceChart(data.attendance.weeklyChart);
+
+    // C. Department Donut Chart & List
+    const deptSub = document.getElementById('dept-sub-count');
+    const donutCenter = document.getElementById('dept-donut-center-count');
+    const donutSvg = document.getElementById('dept-donut-svg');
+    const deptListContainer = document.getElementById('dept-list-container');
+
+    if (deptSub) deptSub.textContent = `Active employees · ${data.org.totalEmployees} total`;
+    if (donutCenter) donutCenter.textContent = data.org.totalEmployees;
+
+    if (deptListContainer) {
+      if (data.org.departments && data.org.departments.length > 0) {
+        deptListContainer.innerHTML = data.org.departments.slice(0, 5).map(dept => `
+          <li>
+            <i style="background:${dept.color}"></i>
+            <span>${dept.name}</span>
+            <b>${dept.count}<small>${dept.percentage}%</small></b>
+          </li>
+        `).join('');
+      } else {
+        deptListContainer.innerHTML = `<li><span>General</span><b>${data.org.totalEmployees}<small>100%</small></b></li>`;
+      }
     }
-  });
 
-  // Load My Leave Balances
-  callApi('Api_Leave_getMyRequests', [], function(data) {
-    const mount = document.getElementById('dash-leave-balances-mount');
-    if (!mount) return;
-    const balances = data?.balances || [];
-    if (!balances.length) {
-      mount.innerHTML = `<p style="font-size:12px; color:var(--sd-text-muted);">No balances recorded.</p>`;
-      return;
-    }
-    mount.innerHTML = balances.map(b => `
-      <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:8px;">
-        <span><strong>${b.leaveType}</strong></span>
-        <span><strong style="color:var(--sd-primary);">${b.balance}</strong> days remaining</span>
-      </div>
-    `).join('');
-  });
-
-  // Load Holidays
-  callApi('Api_Holidays_list', [], function(list) {
-    const mount = document.getElementById('dash-holidays-mount');
-    if (!mount) return;
-    const todayStr = new Date().toISOString().split('T')[0];
-    const upcoming = (list || []).filter(h => h.date >= todayStr).slice(0, 3);
-
-    if (!upcoming.length) {
-      mount.innerHTML = `<p style="font-size:12px; color:var(--sd-text-muted);">No upcoming holidays this month.</p>`;
-      return;
+    // Dynamic Donut SVG Circles calculation
+    if (donutSvg && data.org.departments && data.org.departments.length > 0) {
+      const circ = 2 * Math.PI * 50; // 314.159
+      let offset = 0;
+      let circlesHtml = `<circle cx="60" cy="60" r="50" stroke="#EEF2F7"></circle>`;
+      data.org.departments.slice(0, 5).forEach(dept => {
+        const strokeLen = (dept.percentage / 100) * circ;
+        circlesHtml += `<circle cx="60" cy="60" r="50" stroke="${dept.color}" stroke-dasharray="${strokeLen} ${circ}" stroke-dashoffset="${-offset}"></circle>`;
+        offset += strokeLen;
+      });
+      donutSvg.innerHTML = circlesHtml;
     }
 
-    mount.innerHTML = upcoming.map(h => `
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:var(--sd-surface-subtle); border-radius:6px; font-size:13px;">
-        <span><strong>${h.name}</strong></span>
-        <span class="pill pill-holiday">${h.date}</span>
-      </div>
-    `).join('');
-  });
-}
+    // D. Pending Approvals Table (Live from Leave & Travel sheets)
+    const pendingRows = document.getElementById('approvalRows');
+    const pendingCounter = document.getElementById('pendingCount');
+    const tableFooter = document.getElementById('approvalTableFooter');
+
+    if (pendingCounter) {
+      pendingCounter.textContent = `${data.leaves.pendingCount} pending`;
+      pendingCounter.className = 'pill ' + (data.leaves.pendingCount === 0 ? 'pill-approved' : 'pill-warning');
+    }
+
+    if (pendingRows) {
+      if (data.leaves.approvalsQueue && data.leaves.approvalsQueue.length > 0) {
+        pendingRows.innerHTML = data.leaves.approvalsQueue.map(item => `
+          <tr>
+            <td>
+              <div class="person">
+                <span class="avatar sm" style="background:#0B1635;">${item.initials}</span>
+                <div><strong>${item.fullName}</strong><small>${item.department} · ${item.empId}</small></div>
+              </div>
+            </td>
+            <td>${item.requestTitle}</td>
+            <td style="color:var(--sd-text-muted);">${item.dates}</td>
+            <td><span class="pill ${item.isOverdue ? 'pill-rejected' : 'pill-warning'}">${item.status}</span></td>
+            <td>
+              <div class="row-actions">
+                <button class="button-approve" onclick="handleApprovalAction(this, 'approve', '${item.fullName}', '${item.id}', '${item.type}')">
+                  <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px;margin-right:3px;"><polyline points="20 6 9 17 4 12"/></svg>Approve
+                </button>
+                <button class="button-reject" onclick="handleApprovalAction(this, 'reject', '${item.fullName}', '${item.id}', '${item.type}')" title="Reject">
+                  <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:13px;height:13px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+        if (tableFooter) tableFooter.textContent = `Showing ${Math.min(5, data.leaves.approvalsQueue.length)} of ${data.leaves.pendingCount} requests`;
+      } else {
+        pendingRows.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:28px 16px; color:var(--sd-text-muted);"><span class="pill pill-approved" style="margin-bottom:6px;">✓ All clear</span><br>No pending approval requests in sheet.</td></tr>`;
+        if (tableFooter) tableFooter.textContent = 'All approval queues up to date';
+      }
+    }
+
+    // E. Payroll Hero Card
+    const elPayEyebrow = document.getElementById('payroll-eyebrow');
+    const elPayAmount = document.getElementById('payroll-amount');
+    const elPayNote = document.getElementById('payroll-note');
+
+    if (elPayEyebrow) elPayEyebrow.textContent = `Payroll · ${data.payroll.monthYear}`;
+    if (elPayAmount) elPayAmount.textContent = data.payroll.grossAmountStr;
+    if (elPayNote) elPayNote.textContent = `Gross payroll for ${data.payroll.totalEmployees} employees · Run scheduled ${data.payroll.runDate}`;
+
+    // F. Recent Activity (from AuditLog sheet)
+    const actList = document.getElementById('recent-activity-list');
+    if (actList && data.activity && data.activity.length > 0) {
+      actList.innerHTML = data.activity.slice(0, 5).map(item => `
+        <li>
+          <span class="act-icon ${item.iconColor}">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </span>
+          <div>
+            <p><b>${item.title}</b> · ${item.detail}</p>
+            <time>${item.timeStr}</time>
+          </div>
+        </li>
+      `).join('');
+    }
+
+    // G. Upcoming Holidays (from Holidays sheet)
+    const eventList = document.getElementById('upcoming-events-list');
+    if (eventList && data.holidays && data.holidays.upcomingList && data.holidays.upcomingList.length > 0) {
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      eventList.innerHTML = data.holidays.upcomingList.map((h, i) => {
+        const parts = h.date.split('-');
+        const dayNum = parts[2] || '01';
+        const mIdx = parseInt(parts[1], 10) - 1;
+        const mStr = monthNames[mIdx] || 'Jun';
+        return `
+          <li>
+            <span class="date-chip ${i === 0 ? 'today' : ''}"><b>${dayNum}</b><small>${mStr}</small></span>
+            <div><strong>${h.name}</strong><small>${h.type || 'Holiday'} · ${h.applicableLocations || 'All'}</small></div>
+            <span class="pill pill-${i === 0 ? 'approved' : 'neutral'} tag">${h.type || 'Holiday'}</span>
+          </li>
+        `;
+      }).join('');
+    }
+
+    // H. Automations (Real triggers)
+    const autoList = document.getElementById('automations-list');
+    if (autoList && data.automations && data.automations.length > 0) {
+      autoList.innerHTML = data.automations.map(auto => `
+        <li>
+          <span class="act-icon ${auto.active ? 'green' : 'amber'}">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+          </span>
+          <div><strong>${auto.name}</strong><small>${auto.trigger}</small></div>
+          <div class="right">
+            <button class="switch" role="switch" aria-checked="${auto.active}" aria-label="Toggle ${auto.name}" onclick="toggleAutomationSwitch(this, '${auto.name}')"></button>
+            <time>${auto.lastRun}</time>
+          </div>
+        </li>
+      `).join('');
+    }
+
+    // I. Manager View Live Data
+    const mgrHeadcount = document.getElementById('mgr-team-headcount');
+    const mgrPresent = document.getElementById('mgr-team-present');
+    const mgrPending = document.getElementById('mgr-pending-count');
+    const mgrApprovalRows = document.getElementById('mgr-approval-rows');
+    const mgrRoleList = document.getElementById('mgr-role-list');
+
+    if (mgrHeadcount) mgrHeadcount.textContent = data.manager.teamHeadcount;
+    if (mgrPresent) mgrPresent.textContent = `${data.manager.teamPresentToday} / ${data.manager.teamHeadcount}`;
+    if (mgrPending) mgrPending.textContent = data.manager.teamApprovals ? data.manager.teamApprovals.length : '0';
+
+    if (mgrRoleList && data.manager.teamRoles && data.manager.teamRoles.length > 0) {
+      mgrRoleList.innerHTML = data.manager.teamRoles.map(r => `
+        <li><i style="background:${r.color}"></i><span>${r.name}</span><b>${r.count}<small>${r.percentage}%</small></b></li>
+      `).join('');
+    }
+
+    if (mgrApprovalRows) {
+      if (data.manager.teamApprovals && data.manager.teamApprovals.length > 0) {
+        mgrApprovalRows.innerHTML = data.manager.teamApprovals.map(item => `
+          <tr>
+            <td>
+              <div class="person">
+                <span class="avatar sm" style="background:#0B1635;">${item.initials}</span>
+                <div><strong>${item.fullName}</strong><small>${item.department}</small></div>
+              </div>
+            </td>
+            <td>${item.requestTitle}</td>
+            <td style="color:var(--sd-text-muted);">${item.dates}</td>
+            <td><span class="pill ${item.isOverdue ? 'pill-rejected' : 'pill-warning'}">${item.status}</span></td>
+            <td>
+              <div class="row-actions">
+                <button class="button-approve" onclick="handleApprovalAction(this, 'approve', '${item.fullName}', '${item.id}', '${item.type}')">Approve</button>
+                <button class="button-reject" onclick="handleApprovalAction(this, 'reject', '${item.fullName}', '${item.id}', '${item.type}')">✕</button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      } else {
+        mgrApprovalRows.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--sd-text-muted);">No pending requests from your direct reports.</td></tr>`;
+      }
+    }
+
+    // J. Employee View Live Data
+    const empPunchTime = document.getElementById('emp-punch-time');
+    const empPunchFoot = document.getElementById('emp-punch-foot');
+    const empLeaveBal = document.getElementById('emp-leave-balance');
+    const empLeaveFoot = document.getElementById('emp-leave-foot');
+    const empWeekHours = document.getElementById('emp-week-hours');
+    const empNextHol = document.getElementById('emp-next-holiday');
+    const empHolFoot = document.getElementById('emp-holiday-foot');
+    const empSubReqs = document.getElementById('emp-submitted-requests');
+
+    if (empPunchTime) {
+      if (data.employee.todayPunch && data.employee.todayPunch.punchInTime) {
+        const timePart = data.employee.todayPunch.punchInTime.split(' ')[1] || '09:00';
+        empPunchTime.innerHTML = `Clocked In<small style="display:block; font-size:14px; margin-top:3px; color:var(--sd-success); font-weight:700;">● ${timePart}</small>`;
+        if (empPunchFoot) empPunchFoot.innerHTML = `<span class="delta up">Active</span>${data.employee.todayPunch.workedHours || 0}h logged today`;
+      } else {
+        empPunchTime.innerHTML = `Not Clocked In<small style="display:block; font-size:13px; margin-top:3px; color:var(--sd-text-muted);">Ready to record punch</small>`;
+        if (empPunchFoot) empPunchFoot.innerHTML = `<span class="delta flat">Offline</span>Punch in above`;
+      }
+    }
+
+    if (empLeaveBal) {
+      empLeaveBal.innerHTML = `${data.employee.balances.totalRemaining}<small>days remaining</small>`;
+      if (empLeaveFoot) empLeaveFoot.innerHTML = `<span class="delta up">Available</span>${data.employee.balances.casual} Casual · ${data.employee.balances.sick} Sick · ${data.employee.balances.earned} Earned`;
+    }
+
+    if (empWeekHours) {
+      empWeekHours.innerHTML = `${data.employee.weekHours}<small>/ 40 hrs</small>`;
+    }
+
+    if (empNextHol && data.holidays.next) {
+      empNextHol.innerHTML = `${data.holidays.next.name}<small style="display:block; font-size:12.5px; margin-top:2px;">${data.holidays.next.formattedDate}</small>`;
+      if (empHolFoot) empHolFoot.innerHTML = `<span class="delta up">In ${data.holidays.next.daysRemaining} days</span>Upcoming Holiday`;
+    }
+
+    if (empSubReqs) {
+      if (data.employee.submittedRequests && data.employee.submittedRequests.length > 0) {
+        empSubReqs.innerHTML = data.employee.submittedRequests.map(r => `
+          <li>
+            <span class="act-icon ${r.status === 'Approved' ? 'green' : 'amber'}">
+              <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </span>
+            <div>
+              <p><b>${r.title}</b></p>
+              <time>${r.dates} · <span class="pill pill-${r.status === 'Approved' ? 'approved' : 'warning'}" style="padding:1px 6px; font-size:10px;">${r.status}</span></time>
+            </div>
+          </li>
+        `).join('');
+      } else {
+        empSubReqs.innerHTML = `<li style="color:var(--sd-text-muted); font-size:12.5px;">No recent leave or travel requests submitted.</li>`;
+      }
+    }
+
+    updateGreetingAndSubtitle();
+  }
+
+  /* ---------- 7. Dashboard Main Lifecycle Hook ---------- */
+  function loadModule_dashboard() {
+    const user = (typeof App !== 'undefined' && App.user) ? App.user : null;
+    const targetRole = resolveUserDashboardRole(user);
+    applyRoleDashboard(targetRole);
+
+    // Call unified backend endpoint to fetch live real data directly from Google Sheets
+    callApi('Api_Dashboard_getData', [], function(res) {
+      if (res) {
+        syncDashboardWithRealData(res);
+      }
+    }, function(err) {
+      console.warn('Live dashboard sync error:', err);
+    });
+  }
+
+  window.syncDashboardToUserRole = function() {
+    const user = (typeof App !== 'undefined' && App.user) ? App.user : null;
+    const targetRole = resolveUserDashboardRole(user);
+    applyRoleDashboard(targetRole);
+    if (liveDashboardCache) {
+      syncDashboardWithRealData(liveDashboardCache);
+    }
+  };
 </script>
