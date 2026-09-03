@@ -95,7 +95,34 @@
       </div>
     </div>
   </div>
-  <!--  -->
+  <!-- Company Branding & Logo Customization -->
+  <div class="card" style="margin-bottom:24px;">
+    <h3 class="card-title" style="margin-bottom:8px;">Company Logo & Branding</h3>
+    <p style="font-size:13px; color:var(--sd-text-secondary); margin-bottom:18px;">
+      Upload your official company logo to customize the navigation sidebar and application header.
+    </p>
+
+    <div style="display:flex; align-items:center; gap:20px; margin-bottom:18px; padding:16px; background:var(--sd-navy); border-radius:10px;">
+      <div style="width:180px; height:50px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.06); border:1px dashed rgba(255,255,255,0.2); border-radius:6px; overflow:hidden; padding:4px;">
+        <img id="admin-logo-preview" src="" alt="Current Logo" style="max-height:40px; max-width:160px; object-fit:contain;">
+      </div>
+      <div>
+        <div style="font-size:12px; font-weight:700; color:#FFFFFF;">Sidebar Logo Preview</div>
+        <div style="font-size:11px; color:#94A3B8; margin-top:2px;">PNG, SVG, JPG, or WEBP (Recommended: 200x50px transparent PNG)</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Select Image File</label>
+      <input type="file" id="admin-logo-file-input" class="form-control" accept="image/png, image/jpeg, image/svg+xml, image/webp" onchange="previewUploadedLogo(this)">
+    </div>
+
+    <div style="display:flex; gap:12px; margin-top:12px;">
+      <button type="button" class="btn btn-primary btn-sm" id="btn-save-logo" onclick="saveUploadedLogo()" disabled>Save Company Logo</button>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="resetDefaultLogo()">Reset to Default</button>
+    </div>
+  </div>
+
   <!-- Audit Log Table -->
   <div class="card">
     <div class="card-header">
@@ -190,6 +217,80 @@
     callApi('Api_Admin_initializeSystem', [], function (res) {
       showToast(`System initialized with ${res.createdSheets.length} sheets`, 'success');
       loadModule_admin();
+    }, showToastError);
+  }
+
+  let selectedLogoDataUrl = null;
+
+  function previewUploadedLogo(input) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    if (file.size > 2 * 1024 * 1024) {
+      showToast('File is too large. Max 2MB allowed.', 'error');
+      input.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 240;
+        const MAX_HEIGHT = 60;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+          const ratio = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height);
+          width = width * ratio;
+          height = height * ratio;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        selectedLogoDataUrl = canvas.toDataURL(file.type === 'image/jpeg' ? 'image/jpeg' : 'image/png', 0.85);
+        document.getElementById('admin-logo-preview').src = selectedLogoDataUrl;
+        document.getElementById('btn-save-logo').disabled = false;
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function saveUploadedLogo() {
+    if (!selectedLogoDataUrl) return;
+    document.getElementById('btn-save-logo').textContent = 'Saving...';
+    document.getElementById('btn-save-logo').disabled = true;
+    
+    callApi('Api_Admin_saveLogo', [selectedLogoDataUrl], function(res) {
+      showToast('Company logo updated successfully', 'success');
+      document.getElementById('btn-save-logo').textContent = 'Save Company Logo';
+      document.getElementById('btn-save-logo').disabled = true;
+      document.getElementById('admin-logo-file-input').value = '';
+      if (typeof applyCompanyLogo === 'function') {
+        applyCompanyLogo(selectedLogoDataUrl);
+      }
+    }, function(err) {
+      showToastError(err);
+      document.getElementById('btn-save-logo').textContent = 'Save Company Logo';
+      document.getElementById('btn-save-logo').disabled = false;
+    });
+  }
+
+  function resetDefaultLogo() {
+    if (!confirm('Are you sure you want to reset to the default StackDrove logo?')) return;
+    callApi('Api_Admin_resetLogo', [], function(res) {
+      showToast('Logo reset to default', 'success');
+      if (typeof resetCompanyLogoUI === 'function') {
+        resetCompanyLogoUI();
+      } else {
+        localStorage.removeItem('sd_company_logo');
+        location.reload();
+      }
     }, showToastError);
   }
 </script>

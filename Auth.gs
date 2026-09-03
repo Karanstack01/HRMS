@@ -13,9 +13,16 @@ var Auth = (function() {
 
   const ROLE_HIERARCHY = {
     employee: 1,
+    staff: 1,
     manager: 2,
+    lead: 2,
     hr: 3,
-    admin: 4
+    admin: 4,
+    superadmin: 4,
+    'super admin': 4,
+    executive: 4,
+    director: 4,
+    owner: 4
   };
 
   function getCurrentUser_() {
@@ -63,8 +70,10 @@ var Auth = (function() {
 
   function hasRole_(user, requiredRole) {
     if (!user || !user.role) return false;
-    const userRank = ROLE_HIERARCHY[user.role.toLowerCase()] || 0;
-    const reqRank = ROLE_HIERARCHY[requiredRole.toLowerCase()] || 99;
+    const rLower = String(user.role).toLowerCase().trim();
+    if (rLower === 'admin' || rLower === 'superadmin' || rLower === 'executive' || rLower === 'director' || rLower === 'owner') return true;
+    const userRank = ROLE_HIERARCHY[rLower] || 1;
+    const reqRank = ROLE_HIERARCHY[String(requiredRole).toLowerCase().trim()] || 1;
     return userRank >= reqRank;
   }
 

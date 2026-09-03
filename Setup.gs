@@ -5,7 +5,11 @@
 
 function initializeSystem() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  Config.initDefaults();
+  if (typeof Config.initDefaults === 'function') {
+    Config.initDefaults();
+  } else {
+    console.warn('Config.initDefaults is not available. Please ensure Config.gs is fully updated.');
+  }
 
   // 1. Define Master Sheets Schema
   const SHEETS_SCHEMA = {
@@ -95,7 +99,7 @@ function initializeSystem() {
     }
     const headerRange = sheet.getRange(1, 1, 1, headers.length);
     headerRange.setFontWeight('bold');
-    headerRange.setBackground('#1E1B4B');
+    headerRange.setBackground('#0B1635');
     headerRange.setFontColor('#FFFFFF');
     sheet.setFrozenRows(1);
   }
@@ -125,7 +129,11 @@ function initializeSystem() {
     } else {
       sf = rootFolder.createFolder(sub);
     }
-    Config.setFolderId(sub.toUpperCase(), sf.getId());
+    if (typeof Config.setFolderId === 'function') {
+      Config.setFolderId(sub.toUpperCase(), sf.getId());
+    } else {
+      Config.set('DRIVE_FOLDER_' + sub.toUpperCase(), sf.getId());
+    }
   });
 
   // 4. Seed Initial Admin & Directory Records if empty

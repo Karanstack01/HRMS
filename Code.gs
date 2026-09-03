@@ -191,6 +191,14 @@ function getInitialAppData() {
       }
     } catch (_) {}
 
+    let companyLogo = 'https://res.cloudinary.com/ny6lcexj/image/upload/f_auto,q_auto/WhatsApp_Image_2026-09-02_at_14.22.56';
+    try {
+      companyLogo = PropertiesService.getScriptProperties().getProperty('COMPANY_LOGO_DATA_URL') || companyLogo;
+      if (!companyLogo && typeof Config !== 'undefined' && Config.get) {
+        companyLogo = Config.get('COMPANY_LOGO_URL') || companyLogo;
+      }
+    } catch (_) {}
+
     return {
       success: true,
       data: {
@@ -198,7 +206,8 @@ function getInitialAppData() {
         nav: nav,
         orgName: orgName,
         currency: currency,
-        punchStatus: punchStatus
+        punchStatus: punchStatus,
+        companyLogo: companyLogo
       }
     };
   } catch (e) {
