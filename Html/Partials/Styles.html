@@ -806,18 +806,25 @@
 
   /* Modals */
   .modal-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(11, 22, 53, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(11, 22, 53, 0.65) !important;
+    backdrop-filter: blur(5px) !important;
+    -webkit-backdrop-filter: blur(5px) !important;
+    display: none !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 99999 !important;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.15s ease-out;
+    transition: opacity 0.18s ease-out;
   }
-  .modal-backdrop.show { opacity: 1; pointer-events: auto; }
+  .modal-backdrop.show,
+  .modal-backdrop.active {
+    display: flex !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
   .modal-dialog {
     background: var(--sd-surface);
     border-radius: var(--sd-radius-xl);
@@ -1955,9 +1962,11 @@
     opacity: 0;
     transition: opacity 0.2s ease-in-out;
   }
-  .modal-backdrop.active {
+  .modal-backdrop.active,
+  .modal-backdrop.show {
     display: flex !important;
     opacity: 1 !important;
+    pointer-events: auto !important;
   }
   .modal-container {
     background: var(--sd-surface, #FFFFFF) !important;
@@ -1970,6 +1979,7 @@
     overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
+    pointer-events: auto !important;
     animation: modalPopAnim 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
   .modal-container.modal-lg {

@@ -1,16 +1,16 @@
 <!-- Global Modal Container -->
 <div id="global-modal-backdrop" class="modal-backdrop" onclick="handleBackdropClick(event)">
-  <div class="modal-container" id="global-modal-content">
+  <div class="modal-container" id="global-modal-content" onclick="event.stopPropagation();" style="pointer-events: auto;">
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1px solid var(--sd-border);">
       <h3 id="modal-title" style="font-size: 17px; font-weight: 700; color: var(--sd-navy); margin: 0;">Dialog</h3>
       <button type="button" class="button button-ghost button-sm" onclick="closeAppModal()" style="padding: 4px 8px; border-radius: 6px;" title="Close">
         <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width: 18px; height: 18px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
-    <div id="modal-body" style="padding: 24px; overflow-y: auto; max-height: calc(88vh - 130px);">
+    <div id="modal-body" style="padding: 24px; overflow-y: auto; max-height: calc(88vh - 130px); pointer-events: auto;">
       <!-- Dynamic Form / Content -->
     </div>
-    <div id="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--sd-border); display: flex; justify-content: flex-end; gap: 12px; background: var(--sd-surface-subtle); border-radius: 0 0 var(--sd-radius-xl) var(--sd-radius-xl);">
+    <div id="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--sd-border); display: flex; justify-content: flex-end; gap: 12px; background: var(--sd-surface-subtle); border-radius: 0 0 var(--sd-radius-xl) var(--sd-radius-xl); pointer-events: auto;">
       <button class="button button-secondary" type="button" id="modal-cancel-btn" onclick="closeAppModal()">Cancel</button>
       <button class="button button-primary" type="button" id="modal-confirm-btn">Confirm</button>
     </div>
@@ -54,6 +54,11 @@
     const backdrop = document.getElementById('global-modal-backdrop');
     if (backdrop) {
       backdrop.classList.add('active');
+      backdrop.classList.add('show');
+      backdrop.style.display = 'flex';
+      backdrop.style.pointerEvents = 'auto';
+      backdrop.style.opacity = '1';
+      document.body.style.overflow = 'hidden'; // Lock background scrolling
       if (typeof renderIconsInDOM === 'function') {
         renderIconsInDOM(backdrop);
       }
@@ -64,6 +69,11 @@
     const backdrop = document.getElementById('global-modal-backdrop');
     if (backdrop) {
       backdrop.classList.remove('active');
+      backdrop.classList.remove('show');
+      backdrop.style.display = 'none';
+      backdrop.style.pointerEvents = 'none';
+      backdrop.style.opacity = '0';
+      document.body.style.overflow = ''; // Unlock background scrolling
     }
     modalConfirmCallback = null;
   }
