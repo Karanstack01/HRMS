@@ -34,14 +34,16 @@
       <span id="topbar-time" style="font-size:13.5px; font-weight:700; color:#0B1635;">--:--:--</span>
     </div>
 
-    <!-- Quick Punch Station Button (Royal Blue #2563EB) -->
+    <!-- Quick Punch Station Button (Emerald Green #16A34A for Clock In, Rose Red #DC2626 for Clock Out) -->
     <div id="topbar-punch-container">
       <button id="btn-quick-punch" onclick="triggerQuickPunch()" 
-              style="display:inline-flex; align-items:center; gap:8px; height:38px; padding:0 18px; border-radius:10px; font-size:13px; font-weight:600; border:none; cursor:pointer; background:#2563EB; color:#FFFFFF; transition:all 0.15s ease-out; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
-        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px;">
-          <circle cx="12" cy="12" r="10"></circle>
-          <polyline points="12 6 12 12 16 14"></polyline>
-        </svg>
+              style="display:inline-flex; align-items:center; gap:8px; height:38px; padding:0 18px; border-radius:10px; font-size:13px; font-weight:600; border:none; cursor:pointer; background:#16A34A; color:#FFFFFF; transition:all 0.15s ease-out; box-shadow:0 1px 3px rgba(22,163,74,0.3);">
+        <span id="topbar-punch-icon" style="display:inline-flex; align-items:center;">
+          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </span>
         <span id="punch-btn-label">Clock In</span>
       </button>
     </div>
@@ -97,14 +99,22 @@
   function updatePunchButtonUI(isPunchedIn, todayRecord) {
     const btn = document.getElementById('btn-quick-punch');
     const label = document.getElementById('punch-btn-label');
+    const iconSpan = document.getElementById('topbar-punch-icon');
     if (!btn || !label) return;
 
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    const clockSvg = `<svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
+    if (iconSpan) iconSpan.innerHTML = clockSvg;
+
     if (isPunchedIn) {
-      btn.style.background = '#DC2626'; // Danger Red
+      btn.style.background = '#DC2626'; // Danger Red for Clock Out
+      btn.style.boxShadow = '0 1px 4px rgba(220, 38, 38, 0.4)';
       label.textContent = 'Clock Out';
       btn.title = todayRecord?.punchInTime ? `Clocked in at ${new Date(todayRecord.punchInTime).toLocaleTimeString()}` : 'Click to clock out';
     } else {
-      btn.style.background = '#2563EB'; // Royal Blue
+      btn.style.background = '#16A34A'; // Emerald Green for Clock In
+      btn.style.boxShadow = '0 1px 4px rgba(22, 163, 74, 0.4)';
       label.textContent = 'Clock In';
       btn.title = 'Click to record punch-in';
     }
@@ -113,26 +123,52 @@
   function triggerQuickPunch() {
     const isPunchedIn = App.punchStatus && App.punchStatus.isPunchedIn;
     const action = isPunchedIn ? 'OUT' : 'IN';
-    const reqId = newRequestId();
+    const reqId = (typeof newRequestId === 'function') ? newRequestId() : ('req_' + Date.now());
 
     const btn = document.getElementById('btn-quick-punch');
-    if (btn) btn.disabled = true;
+    const label = document.getElementById('punch-btn-label');
+    const iconSpan = document.getElementById('topbar-punch-icon');
+
+    if (btn) {
+      btn.disabled = true;
+      btn.style.opacity = '0.9';
+      if (action === 'OUT') {
+        btn.style.background = '#DC2626';
+      } else {
+        btn.style.background = '#16A34A';
+      }
+    }
+    if (iconSpan) {
+      iconSpan.innerHTML = `<span class="sd-spinner" style="width:13px; height:13px; border:2px solid rgba(255,255,255,0.35); border-top-color:#FFFFFF; border-radius:50%; display:inline-block; animation:sdSpin 0.7s linear infinite;"></span>`;
+    }
+    if (label) {
+      label.textContent = action === 'IN' ? 'Clocking In…' : 'Clocking Out…';
+    }
+
+    const quickTimer = setTimeout(function() {
+      if (btn && btn.disabled) {
+        btn.disabled = false;
+        updatePunchButtonUI(App.punchStatus?.isPunchedIn, App.punchStatus?.todayRecord);
+      }
+    }, 8000);
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        pos => executePunchCall(action, `${pos.coords.latitude},${pos.coords.longitude}`, reqId),
-        () => executePunchCall(action, 'Office Location', reqId)
+        pos => executePunchCall(action, `${pos.coords.latitude},${pos.coords.longitude}`, reqId, quickTimer),
+        () => executePunchCall(action, 'Office Location', reqId, quickTimer)
       );
     } else {
-      executePunchCall(action, 'Web Browser', reqId);
+      executePunchCall(action, 'Web Browser', reqId, quickTimer);
     }
   }
 
-  function executePunchCall(action, geo, reqId) {
+  function executePunchCall(action, geo, reqId, timerId) {
     callApi('Api_Attendance_punch', [action, geo, reqId], function(res) {
+      if (timerId) clearTimeout(timerId);
       const btn = document.getElementById('btn-quick-punch');
       if (btn) btn.disabled = false;
       showToast(`Punch ${action} successfully recorded`, 'success');
+      App.punchStatus = App.punchStatus || {};
       App.punchStatus.isPunchedIn = (action === 'IN');
       App.punchStatus.todayRecord = res;
       updatePunchButtonUI(App.punchStatus.isPunchedIn, res);
@@ -144,8 +180,10 @@
         loadModuleData(App.currentModule);
       }
     }, function(err) {
+      if (timerId) clearTimeout(timerId);
       const btn = document.getElementById('btn-quick-punch');
       if (btn) btn.disabled = false;
+      updatePunchButtonUI(App.punchStatus?.isPunchedIn, App.punchStatus?.todayRecord);
       showToastError(err);
     });
   }

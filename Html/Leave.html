@@ -1,133 +1,292 @@
 <div id="module-leave" class="module-container" style="display:none;">
-  <div class="page-header">
+  <!-- Page Header matching StackDrove standard -->
+  <div class="page-head">
     <div>
-      <h1 class="page-title">Leave & Time Off</h1>
-      <p class="page-subtitle">Apply for time off, view live balances, and track manager approval statuses.</p>
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <span>StackDrove HRMS</span>
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="m9 18 6-6-6-6"/></svg>
+        <span class="current">Leave & Time Off</span>
+      </nav>
+      <h1>Leave &amp; Time Off</h1>
+      <p>Submit leave applications, track live quota balances, and review team requests with automated sandwich-day rules.</p>
+    </div>
+
+    <div class="head-actions">
+      <button class="button button-ghost button-sm" type="button" onclick="loadMyLeaveData()" title="Re-sync with Sheet">
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+        <span>Refresh</span>
+      </button>
     </div>
   </div>
 
-  <!-- Sub-Tabs: Apply vs My Requests vs Approvals -->
-  <div style="display:flex; gap:16px; margin-bottom:20px; border-bottom:1px solid var(--sd-border); padding-bottom:12px;">
-    <button class="btn btn-secondary btn-sm active-tab" id="tab-leave-apply" onclick="switchLeaveTab('apply')">Apply for Leave</button>
-    <button class="btn btn-secondary btn-sm" id="tab-leave-my" onclick="switchLeaveTab('my')">My Requests</button>
-    <button class="btn btn-secondary btn-sm" id="tab-leave-approvals" onclick="switchLeaveTab('approvals')" style="display:none;">
-      Pending Approvals <span class="pill pill-pending" id="badge-leave-approvals" style="margin-left:6px; display:none;">0</span>
-    </button>
+  <!-- 4 Live KPI Quota Balance Cards -->
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:24px;">
+    <!-- Casual Leave -->
+    <div class="card" style="padding:18px 20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:11.5px; color:var(--sd-text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Casual Leave (CL)</span>
+        <div style="width:34px; height:34px; border-radius:8px; background:rgba(37, 99, 235, 0.12); display:flex; align-items:center; justify-content:center;">
+          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="var(--sd-primary)" stroke-width="2" style="width:18px;height:18px;"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+        </div>
+      </div>
+      <h3 style="font-size:26px; font-weight:800; color:var(--sd-navy); margin-top:8px; margin-bottom:6px;" id="kpi-leave-casual">-- <span style="font-size:13px; font-weight:500; color:var(--sd-text-muted);">/ -- days</span></h3>
+      <div style="height:6px; background:var(--sd-surface-subtle); border-radius:99px; overflow:hidden;">
+        <div id="prog-leave-casual" style="width:0%; height:100%; background:var(--sd-primary); transition:width 0.4s ease;"></div>
+      </div>
+    </div>
+
+    <!-- Sick Leave -->
+    <div class="card" style="padding:18px 20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:11.5px; color:var(--sd-text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Sick Leave (SL)</span>
+        <div style="width:34px; height:34px; border-radius:8px; background:rgba(22, 163, 74, 0.12); display:flex; align-items:center; justify-content:center;">
+          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="var(--sd-success)" stroke-width="2" style="width:18px;height:18px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+      </div>
+      <h3 style="font-size:26px; font-weight:800; color:var(--sd-navy); margin-top:8px; margin-bottom:6px;" id="kpi-leave-sick">-- <span style="font-size:13px; font-weight:500; color:var(--sd-text-muted);">/ -- days</span></h3>
+      <div style="height:6px; background:var(--sd-surface-subtle); border-radius:99px; overflow:hidden;">
+        <div id="prog-leave-sick" style="width:0%; height:100%; background:var(--sd-success); transition:width 0.4s ease;"></div>
+      </div>
+    </div>
+
+    <!-- Earned / Privilege Leave -->
+    <div class="card" style="padding:18px 20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:11.5px; color:var(--sd-text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Earned Leave (EL)</span>
+        <div style="width:34px; height:34px; border-radius:8px; background:rgba(217, 119, 6, 0.12); display:flex; align-items:center; justify-content:center;">
+          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="var(--sd-warning)" stroke-width="2" style="width:18px;height:18px;"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+        </div>
+      </div>
+      <h3 style="font-size:26px; font-weight:800; color:var(--sd-navy); margin-top:8px; margin-bottom:6px;" id="kpi-leave-earned">-- <span style="font-size:13px; font-weight:500; color:var(--sd-text-muted);">/ -- days</span></h3>
+      <div style="height:6px; background:var(--sd-surface-subtle); border-radius:99px; overflow:hidden;">
+        <div id="prog-leave-earned" style="width:0%; height:100%; background:var(--sd-warning); transition:width 0.4s ease;"></div>
+      </div>
+    </div>
+
+    <!-- Total Available Quota -->
+    <div class="card" style="padding:18px 20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:11.5px; color:var(--sd-text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Total Available</span>
+        <div style="width:34px; height:34px; border-radius:8px; background:rgba(79, 70, 229, 0.12); display:flex; align-items:center; justify-content:center;">
+          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" style="width:18px;height:18px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+      </div>
+      <h3 style="font-size:26px; font-weight:800; color:#4F46E5; margin-top:8px; margin-bottom:6px;" id="kpi-leave-total">-- days</h3>
+      <div style="font-size:12px; color:var(--sd-text-muted); font-weight:500;" id="kpi-leave-total-sub">Includes all active leave types</div>
+    </div>
   </div>
 
-  <div style="display:grid; grid-template-columns:1fr 300px; gap:24px;" id="leave-main-layout">
-    <!-- Main Form / Table Area -->
-    <div>
-      <!-- Section: Apply Form -->
-      <div id="leave-apply-container" class="card">
-        <h3 class="card-title" style="margin-bottom:18px;">New Leave Application</h3>
+  <!-- Sub-Tabs: Segmented Navigation -->
+  <div style="display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; align-items:center;">
+    <div class="segmented" role="tablist" style="margin:0;">
+      <button type="button" class="active" id="tab-leave-apply" onclick="switchLeaveTab('apply')">
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        <span>Apply for Leave</span>
+      </button>
+      <button type="button" id="tab-leave-my" onclick="switchLeaveTab('my')">
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+        <span>My Leave History</span>
+      </button>
+      <button type="button" id="tab-leave-approvals" onclick="switchLeaveTab('approvals')" style="display:none;">
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m16 11 2 2 4-4"/></svg>
+        <span>Team Approvals</span>
+        <span id="badge-leave-approvals" class="pill pill-pending" style="font-size:10.5px; padding:1px 6px; margin-left:4px; display:none;">0</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- SECTION 1: APPLY FOR LEAVE -->
+  <div id="leave-apply-container">
+    <div style="display:grid; grid-template-columns:1.6fr 1fr; gap:24px; align-items:start;" id="leave-apply-layout">
+      <!-- Left: Application Form -->
+      <div class="card" style="padding:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+          <h3 style="font-size:16px; font-weight:700; color:var(--sd-navy); margin:0;">New Leave Request</h3>
+          <span style="font-size:12px; color:var(--sd-text-muted);">* All fields mandatory</span>
+        </div>
+
         <form id="leave-apply-form" onsubmit="event.preventDefault(); submitLeaveApplication();">
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Leave Type *</label>
-              <select id="leave-type-select" class="form-control" onchange="updateSandwichPreview()" required>
-                <option value="Casual">Casual Leave</option>
-                <option value="Sick">Sick Leave</option>
-                <option value="Earned">Earned / Privilege Leave</option>
-                <option value="Unpaid">Unpaid Leave (Loss of Pay)</option>
-              </select>
-            </div>
-            <div class="form-group" style="display:flex; align-items:center; margin-top:24px;">
-              <label style="display:flex; align-items:center; gap:8px; font-size:13.5px; cursor:pointer;">
-                <input type="checkbox" id="leave-half-day" onchange="toggleHalfDay(this.checked)">
-                <span>Half-Day Request</span>
-              </label>
-            </div>
+          <!-- Leave Type Picker -->
+          <div class="form-group" style="margin-bottom:18px;">
+            <label class="form-label" for="leave-type-select">Leave Type *</label>
+            <select id="leave-type-select" class="form-control" onchange="updateSandwichPreview()" required>
+              <option value="Casual">Casual Leave (CL)</option>
+              <option value="Sick">Sick Leave (SL)</option>
+              <option value="Earned">Earned / Privilege Leave (EL)</option>
+              <option value="Unpaid">Unpaid Leave (Loss of Pay)</option>
+            </select>
           </div>
 
-          <div class="form-row">
+          <!-- Half Day Checkbox -->
+          <div style="margin-bottom:18px; padding:12px 14px; background:var(--sd-surface-subtle); border-radius:8px; border:1px solid var(--sd-border);">
+            <label style="display:flex; align-items:center; gap:10px; font-size:13.5px; font-weight:600; cursor:pointer; color:var(--sd-navy); margin:0;">
+              <input type="checkbox" id="leave-half-day" onchange="toggleHalfDay(this.checked)" style="width:16px; height:16px; accent-color:var(--sd-primary); cursor:pointer;">
+              <span>Half-Day Leave Request (0.5 Day)</span>
+            </label>
+          </div>
+
+          <!-- Date Selectors -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:18px;" id="leave-dates-row">
             <div class="form-group">
-              <label class="form-label">From Date *</label>
+              <label class="form-label" for="leave-from-date">From Date *</label>
               <input type="date" id="leave-from-date" class="form-control" onchange="updateSandwichPreview()" required>
             </div>
             <div class="form-group" id="group-leave-to-date">
-              <label class="form-label">To Date *</label>
+              <label class="form-label" for="leave-to-date">To Date *</label>
               <input type="date" id="leave-to-date" class="form-control" onchange="updateSandwichPreview()" required>
             </div>
             <div class="form-group" id="group-half-session" style="display:none;">
-              <label class="form-label">Half-Day Session</label>
+              <label class="form-label" for="leave-half-session">Session Time *</label>
               <select id="leave-half-session" class="form-control">
-                <option value="AM">First Half (AM)</option>
-                <option value="PM">Second Half (PM)</option>
+                <option value="AM">First Half (Morning AM)</option>
+                <option value="PM">Second Half (Afternoon PM)</option>
               </select>
             </div>
           </div>
 
           <!-- Dynamic Sandwich / Working Days Calculation Banner -->
-          <div id="leave-calc-preview" style="background:#EFF6FF; border-left:4px solid #2563EB; padding:12px 16px; border-radius:6px; margin-bottom:18px; font-size:13px; color:#1F2937; display:none;">
-            <!-- Message populated via JS -->
+          <div id="leave-calc-preview" style="display:none; padding:14px 16px; border-radius:10px; margin-bottom:20px; font-size:13px; line-height:1.45; background:rgba(37,99,235,0.08); border:1px solid rgba(37,99,235,0.25); border-left:4px solid var(--sd-primary);">
+            <div style="display:flex; align-items:flex-start; gap:10px;">
+              <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="var(--sd-primary)" stroke-width="2" style="width:18px;height:18px; flex-shrink:0; margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              <div id="leave-calc-text" style="color:var(--sd-navy); font-weight:500;">Calculating duration…</div>
+            </div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Reason for Absence *</label>
-            <textarea id="leave-reason" class="form-control" placeholder="Please provide brief context for your reporting manager..." required></textarea>
+          <!-- Reason Textarea -->
+          <div class="form-group" style="margin-bottom:22px;">
+            <label class="form-label" for="leave-reason">Reason for Absence *</label>
+            <textarea id="leave-reason" class="form-control" rows="3" placeholder="Provide brief context for your reporting manager..." required style="resize:vertical;"></textarea>
           </div>
 
-          <button type="submit" class="btn btn-primary" id="btn-submit-leave">
-            <span>Submit Application</span>
+          <!-- Submit Button -->
+          <button type="submit" class="button button-primary" id="btn-submit-leave" style="padding:10px 24px; font-size:14px; font-weight:700;">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+            <span id="btn-submit-leave-label">Submit Application</span>
           </button>
         </form>
       </div>
 
-      <!-- Section: My Requests -->
-      <div id="leave-my-container" class="card" style="display:none;">
-        <h3 class="card-title" style="margin-bottom:18px;">My Leave History</h3>
-        <div class="table-container" style="border:none; box-shadow:none;">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Type</th>
-                <th>Dates</th>
-                <th>Days</th>
-                <th>Reason</th>
-                <th>Status</th>
-                <th style="text-align:right;">Action</th>
-              </tr>
-            </thead>
-            <tbody id="leave-my-tbody">
-              <!-- Populated via JS -->
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <!-- Right: Policy & Guidelines Card -->
+      <div class="card" style="padding:22px; background:var(--sd-surface); border:1px solid var(--sd-border);">
+        <h4 style="font-size:14px; font-weight:700; color:var(--sd-navy); margin-top:0; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="var(--sd-primary)" stroke-width="2" style="width:17px;height:17px;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          <span>StackDrove Leave Policy</span>
+        </h4>
+        
+        <ul style="padding-left:18px; margin:0; font-size:12.5px; color:var(--sd-text-secondary); line-height:1.6; display:flex; flex-direction:column; gap:8px;">
+          <li><strong>Casual Leave (CL):</strong> Max 3 contiguous days. Cannot be clubbed with Earned Leave.</li>
+          <li><strong>Sick Leave (SL):</strong> Medical certificate required if requesting > 2 consecutive days. Exempt from sandwich rule.</li>
+          <li><strong>Earned Leave (EL):</strong> Requires at least 5 business days advance application notice.</li>
+          <li><strong>Sandwich Rule Active:</strong> If Casual or Earned Leave flanks weekend or company holidays on both sides, the intermediate non-working days will be counted as leave.</li>
+          <li><strong>Approval Turnaround:</strong> Applications are routed automatically to your designated reporting manager.</li>
+        </ul>
 
-      <!-- Section: Approvals Queue -->
-      <div id="leave-approvals-container" class="card" style="display:none;">
-        <h3 class="card-title" style="margin-bottom:18px;">Team Leave Requests</h3>
-        <div id="leave-approvals-mount">
-          <!-- Populated via JS -->
+        <div style="margin-top:18px; padding-top:14px; border-top:1px solid var(--sd-border); font-size:12px; color:var(--sd-text-muted);">
+          For emergency leaves or policy questions, please contact <a href="mailto:hr@stackdrove.com" style="color:var(--sd-primary); text-decoration:underline;">hr@stackdrove.com</a>.
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- Right Sidebar: Live Balances -->
-    <div>
-      <div class="card">
-        <h3 class="card-title" style="margin-bottom:16px;">Leave Balances</h3>
-        <div id="leave-balances-widget">
-          <!-- Balance Progress Bars populated via JS -->
+  <!-- SECTION 2: MY LEAVE HISTORY -->
+  <div id="leave-my-container" style="display:none;">
+    <div class="card" style="padding:22px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
+        <h3 style="font-size:16px; font-weight:700; color:var(--sd-navy); margin:0;">My Leave History</h3>
+        
+        <!-- Filter by Status -->
+        <div style="display:flex; gap:10px; align-items:center;">
+          <input type="text" id="leave-search-input" placeholder="Search by reason or dates..." class="form-control" style="width:240px; height:34px; font-size:12.5px;" oninput="filterMyLeaveHistory()">
+          <select id="leave-status-filter" class="filter-select" style="height:34px;" onchange="filterMyLeaveHistory()">
+            <option value="ALL">All Statuses</option>
+            <option value="Approved">Approved</option>
+            <option value="Pending">Pending</option>
+            <option value="Rejected">Rejected</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
         </div>
+      </div>
+
+      <div class="table-container" style="border:1px solid var(--sd-border); border-radius:10px; overflow:hidden;">
+        <table class="table" style="margin:0;">
+          <thead>
+            <tr>
+              <th style="width:160px;">Leave Type</th>
+              <th style="width:200px;">Date Span</th>
+              <th style="width:110px;">Days Consumed</th>
+              <th>Reason</th>
+              <th style="width:130px;">Applied On</th>
+              <th style="width:120px;">Status</th>
+              <th style="width:90px; text-align:right;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="leave-my-tbody">
+            <tr>
+              <td colspan="7" style="text-align:center; padding:32px; color:var(--sd-text-muted);">
+                <span class="sd-spinner"></span> Loading leave history…
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: TEAM APPROVALS (For Managers/HR/Admin) -->
+  <div id="leave-approvals-container" style="display:none;">
+    <div class="card" style="padding:22px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+        <div>
+          <h3 style="font-size:16px; font-weight:700; color:var(--sd-navy); margin:0;">Team Leave Approvals Queue</h3>
+          <p style="font-size:13px; color:var(--sd-text-secondary); margin:2px 0 0 0;">Action pending applications from your direct reports and department.</p>
+        </div>
+        <button class="button button-ghost button-sm" type="button" onclick="loadLeaveApprovals()">
+          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          <span>Refresh Queue</span>
+        </button>
+      </div>
+
+      <div id="leave-approvals-mount">
+        <!-- Rendered dynamically via JS -->
       </div>
     </div>
   </div>
 </div>
 
 <script>
-let leaveMyData = null;
+/* ============================================================
+   Leave & Time Off Module Logic (StackDrove HRMS)
+   ============================================================ */
+
+function escapeHtml(text) {
+  if (text === null || text === undefined) return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+let leaveModuleData = {
+  requests: [],
+  balances: [],
+  approvals: []
+};
 
 function loadModule_leave() {
   const user = App.user;
-  if (user && (user.role === 'manager' || user.role === 'hr' || user.role === 'admin')) {
-    const tab = document.getElementById('tab-leave-approvals');
-    if (tab) tab.style.display = 'inline-flex';
-    loadLeaveApprovalsCount();
+  const isManagerOrAbove = user && (user.role === 'manager' || user.role === 'hr' || user.role === 'admin');
+  
+  const tabApprovals = document.getElementById('tab-leave-approvals');
+  if (tabApprovals) {
+    tabApprovals.style.display = isManagerOrAbove ? 'inline-flex' : 'none';
+    if (isManagerOrAbove) {
+      loadLeaveApprovalsCount();
+    }
   }
 
+  // Pre-fill From and To with today's date if empty
   const today = new Date().toISOString().split('T')[0];
   const fromEl = document.getElementById('leave-from-date');
   const toEl = document.getElementById('leave-to-date');
@@ -138,71 +297,148 @@ function loadModule_leave() {
   updateSandwichPreview();
 }
 
+window.loadModule_leave = loadModule_leave;
+
+/* ---------- 1. Fetch & Render User Leave Quota & History ---------- */
 function loadMyLeaveData() {
   callApi('Api_Leave_getMyRequests', [], function(data) {
-    leaveMyData = data;
-    renderLeaveBalances(data.balances || []);
-    renderMyLeaveHistory(data.requests || []);
-  }, showToastError);
+    leaveModuleData.requests = data?.requests || [];
+    leaveModuleData.balances = data?.balances || [];
+    renderLeaveBalances(leaveModuleData.balances);
+    renderMyLeaveHistory(leaveModuleData.requests);
+    updateLeaveTypeSelectOptions(leaveModuleData.balances);
+  }, function(err) {
+    showToastError(err);
+  });
 }
 
 function renderLeaveBalances(balances) {
-  const mount = document.getElementById('leave-balances-widget');
-  if (!mount) return;
+  let casualBal = 0, casualTot = 12;
+  let sickBal = 0, sickTot = 10;
+  let earnedBal = 0, earnedTot = 15;
+  let totalBal = 0;
 
-  if (!balances.length) {
-    mount.innerHTML = `<p style="font-size:13px; color:var(--sd-text-muted);">No balances recorded.</p>`;
-    return;
-  }
+  balances.forEach(b => {
+    const tot = (b.opening || 0) + (b.accrued || 0) + (b.adjusted || 0);
+    const bal = Number(b.balance) || 0;
+    totalBal += bal;
 
-  mount.innerHTML = balances.map(b => {
-    const total = (b.opening || 0) + (b.accrued || 0) + (b.adjusted || 0);
-    const percent = total > 0 ? Math.round((b.balance / total) * 100) : 0;
-    return `
-      <div style="margin-bottom:16px;">
-        <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;">
-          <strong style="color:var(--sd-text-primary);">${b.leaveType}</strong>
-          <span><strong>${b.balance}</strong> / ${total} days</span>
-        </div>
-        <div style="height:6px; background:var(--sd-surface-subtle); border-radius:99px; overflow:hidden;">
-          <div style="width:${percent}%; height:100%; background:var(--sd-primary);"></div>
-        </div>
-      </div>
-    `;
-  }).join('');
+    if (b.leaveType === 'Casual') {
+      casualBal = bal;
+      casualTot = tot || 12;
+    } else if (b.leaveType === 'Sick') {
+      sickBal = bal;
+      sickTot = tot || 10;
+    } else if (b.leaveType === 'Earned') {
+      earnedBal = bal;
+      earnedTot = tot || 15;
+    }
+  });
+
+  // KPI 1: Casual
+  const kpiCasual = document.getElementById('kpi-leave-casual');
+  const progCasual = document.getElementById('prog-leave-casual');
+  if (kpiCasual) kpiCasual.innerHTML = `${casualBal} <span style="font-size:13px; font-weight:500; color:var(--sd-text-muted);">/ ${casualTot} days</span>`;
+  if (progCasual) progCasual.style.width = Math.min(100, Math.round((casualBal / Math.max(1, casualTot)) * 100)) + '%';
+
+  // KPI 2: Sick
+  const kpiSick = document.getElementById('kpi-leave-sick');
+  const progSick = document.getElementById('prog-leave-sick');
+  if (kpiSick) kpiSick.innerHTML = `${sickBal} <span style="font-size:13px; font-weight:500; color:var(--sd-text-muted);">/ ${sickTot} days</span>`;
+  if (progSick) progSick.style.width = Math.min(100, Math.round((sickBal / Math.max(1, sickTot)) * 100)) + '%';
+
+  // KPI 3: Earned
+  const kpiEarned = document.getElementById('kpi-leave-earned');
+  const progEarned = document.getElementById('prog-leave-earned');
+  if (kpiEarned) kpiEarned.innerHTML = `${earnedBal} <span style="font-size:13px; font-weight:500; color:var(--sd-text-muted);">/ ${earnedTot} days</span>`;
+  if (progEarned) progEarned.style.width = Math.min(100, Math.round((earnedBal / Math.max(1, earnedTot)) * 100)) + '%';
+
+  // KPI 4: Total
+  const kpiTotal = document.getElementById('kpi-leave-total');
+  if (kpiTotal) kpiTotal.textContent = `${totalBal} days`;
 }
 
+function updateLeaveTypeSelectOptions(balances) {
+  const sel = document.getElementById('leave-type-select');
+  if (!sel) return;
+
+  const getBal = (type) => {
+    const found = balances.find(b => b.leaveType === type);
+    return found ? found.balance : '--';
+  };
+
+  sel.innerHTML = `
+    <option value="Casual">Casual Leave (CL) — Available: ${getBal('Casual')}d</option>
+    <option value="Sick">Sick Leave (SL) — Available: ${getBal('Sick')}d</option>
+    <option value="Earned">Earned / Privilege Leave (EL) — Available: ${getBal('Earned')}d</option>
+    <option value="Unpaid">Unpaid Leave (Loss of Pay)</option>
+  `;
+}
+
+/* ---------- 2. My Leave History Table & Filters ---------- */
 function renderMyLeaveHistory(requests) {
   const tbody = document.getElementById('leave-my-tbody');
   if (!tbody) return;
 
-  if (!requests.length) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--sd-text-muted);">No leave requests submitted yet.</td></tr>`;
+  if (!requests || !requests.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:36px; color:var(--sd-text-muted);">No leave applications found.</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = requests.map(r => `
-    <tr>
-      <td><strong>${r.leaveType}</strong></td>
-      <td>${r.fromDate} ${r.fromDate !== r.toDate ? '→ ' + r.toDate : ''}</td>
-      <td><strong>${r.dayCount}d</strong> ${r.isHalfDay ? `(${r.halfSession})` : ''}</td>
-      <td><span style="font-size:12px; color:var(--sd-text-secondary);">${r.reason || '—'}</span></td>
-      <td><span class="pill pill-${r.status.toLowerCase()}">${r.status}</span></td>
-      <td style="text-align:right;">
-        ${r.status === 'Pending' ? `
-          <button class="btn btn-secondary btn-sm" onclick="cancelLeave('${r.leaveId}')">Cancel</button>
-        ` : '—'}
-      </td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = requests.map(r => {
+    const pillClass = r.status === 'Approved' ? 'pill-approved' : 
+                     (r.status === 'Pending' ? 'pill-pending' : 
+                     (r.status === 'Rejected' ? 'pill-rejected' : 'pill-ghost'));
+    
+    const appliedFormatted = r.appliedOn ? r.appliedOn.split('T')[0] : '—';
+    const datesSpan = r.fromDate === r.toDate ? r.fromDate : `${r.fromDate} → ${r.toDate}`;
+
+    return `
+      <tr>
+        <td><strong>${r.leaveType}</strong></td>
+        <td><span style="font-family:'JetBrains Mono',monospace; font-size:12.5px;">${datesSpan}</span></td>
+        <td><strong style="color:var(--sd-primary);">${r.dayCount}d</strong> ${r.isHalfDay ? `<span style="font-size:11px; color:var(--sd-text-muted);">(${r.halfSession || 'Half'})</span>` : ''}</td>
+        <td><span style="font-size:12.5px; color:var(--sd-text-secondary); max-width:260px; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(r.reason || '')}">${escapeHtml(r.reason || '—')}</span></td>
+        <td style="font-size:12px; color:var(--sd-text-muted);">${appliedFormatted}</td>
+        <td><span class="pill ${pillClass}">${r.status}</span></td>
+        <td style="text-align:right;">
+          ${r.status === 'Pending' ? `
+            <button class="button button-ghost button-sm" type="button" onclick="confirmCancelLeave('${r.leaveId}')" title="Cancel this request" style="color:var(--sd-danger);">
+              Cancel
+            </button>
+          ` : '<span style="color:var(--sd-text-muted);">—</span>'}
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
+function filterMyLeaveHistory() {
+  const q = (document.getElementById('leave-search-input')?.value || '').toLowerCase().trim();
+  const statusFilter = document.getElementById('leave-status-filter')?.value || 'ALL';
+
+  const filtered = leaveModuleData.requests.filter(r => {
+    const matchQ = !q || (r.reason && r.reason.toLowerCase().includes(q)) || (r.fromDate && r.fromDate.includes(q)) || (r.leaveType && r.leaveType.toLowerCase().includes(q));
+    const matchStatus = (statusFilter === 'ALL') || (r.status === statusFilter);
+    return matchQ && matchStatus;
+  });
+
+  renderMyLeaveHistory(filtered);
+}
+
+/* ---------- 3. Half Day Toggle & Sandwich Calculator Preview ---------- */
 function toggleHalfDay(isHalf) {
-  document.getElementById('group-leave-to-date').style.display = isHalf ? 'none' : 'block';
-  document.getElementById('group-half-session').style.display = isHalf ? 'block' : 'none';
+  const toDateGroup = document.getElementById('group-leave-to-date');
+  const sessionGroup = document.getElementById('group-half-session');
+  if (toDateGroup) toDateGroup.style.display = isHalf ? 'none' : 'block';
+  if (sessionGroup) sessionGroup.style.display = isHalf ? 'block' : 'none';
+
   if (isHalf) {
-    document.getElementById('leave-to-date').value = document.getElementById('leave-from-date').value;
+    const fromVal = document.getElementById('leave-from-date')?.value;
+    const toEl = document.getElementById('leave-to-date');
+    if (toEl && fromVal) toEl.value = fromVal;
   }
+
   updateSandwichPreview();
 }
 
@@ -212,113 +448,227 @@ function updateSandwichPreview() {
   const toDate = isHalf ? fromDate : document.getElementById('leave-to-date')?.value;
   const type = document.getElementById('leave-type-select')?.value || 'Casual';
 
-  if (!fromDate || !toDate) return;
+  const banner = document.getElementById('leave-calc-preview');
+  const textEl = document.getElementById('leave-calc-text');
+  if (!banner || !textEl) return;
+
+  if (!fromDate || !toDate) {
+    banner.style.display = 'none';
+    return;
+  }
+
+  banner.style.display = 'block';
+  textEl.innerHTML = '<span class="sd-spinner" style="width:12px;height:12px;margin-right:6px;"></span> Calculating total days…';
 
   callApi('Api_Leave_previewDayCount', [fromDate, toDate, type, isHalf], function(res) {
-    const banner = document.getElementById('leave-calc-preview');
-    if (banner && res && res.message) {
-      banner.textContent = res.message;
-      banner.style.display = 'block';
+    if (res && res.message) {
+      textEl.innerHTML = `<strong>${res.dayCount} Day(s) Leave:</strong> ${res.message}`;
+    } else {
+      banner.style.display = 'none';
     }
+  }, function() {
+    banner.style.display = 'none';
   });
 }
 
+/* ---------- 4. Submit Application Action ---------- */
 function submitLeaveApplication() {
   const isHalf = document.getElementById('leave-half-day').checked;
   const fromDate = document.getElementById('leave-from-date').value;
   const toDate = isHalf ? fromDate : document.getElementById('leave-to-date').value;
+  const type = document.getElementById('leave-type-select').value;
+  const reason = document.getElementById('leave-reason').value.trim();
+
+  if (!fromDate || !toDate) {
+    showToast('Please select valid From and To dates.', 'warning');
+    return;
+  }
+
+  const btn = document.getElementById('btn-submit-leave');
+  const btnLabel = document.getElementById('btn-submit-leave-label');
+  if (btn) {
+    btn.disabled = true;
+    if (btnLabel) btnLabel.textContent = 'Submitting Application…';
+  }
 
   const payload = {
-    leaveType: document.getElementById('leave-type-select').value,
+    leaveType: type,
     fromDate: fromDate,
     toDate: toDate,
     isHalfDay: isHalf,
     halfSession: isHalf ? document.getElementById('leave-half-session').value : '',
-    reason: document.getElementById('leave-reason').value,
-    requestId: newRequestId()
+    reason: reason,
+    requestId: (typeof newRequestId === 'function') ? newRequestId() : ('req_' + Date.now())
   };
 
-  const btn = document.getElementById('btn-submit-leave');
-  btn.disabled = true;
-
   callApi('Api_Leave_apply', [payload], function(res) {
-    btn.disabled = false;
-    showToast(`Leave application for ${res.dayCount} day(s) submitted successfully`, 'success');
+    if (btn) {
+      btn.disabled = false;
+      if (btnLabel) btnLabel.textContent = 'Submit Application';
+    }
+    showToast(`Leave application for ${res.dayCount} day(s) submitted successfully!`, 'success');
     document.getElementById('leave-reason').value = '';
     loadMyLeaveData();
     switchLeaveTab('my');
   }, function(err) {
-    btn.disabled = false;
+    if (btn) {
+      btn.disabled = false;
+      if (btnLabel) btnLabel.textContent = 'Submit Application';
+    }
     showToastError(err);
   });
 }
 
-function cancelLeave(leaveId) {
-  if (!confirm('Are you sure you want to cancel this leave request?')) return;
-  callApi('Api_Leave_cancel', [leaveId], function() {
-    showToast('Leave request cancelled', 'success');
-    loadMyLeaveData();
-  }, showToastError);
+/* ---------- 5. Cancellation with In-App Modal ---------- */
+function confirmCancelLeave(leaveId) {
+  const modalHtml = `
+    <div style="padding:10px 0;">
+      <p style="font-size:14px; color:var(--sd-navy); line-height:1.5; margin:0 0 12px 0;">
+        Are you sure you want to cancel this leave application?
+      </p>
+      <p style="font-size:12.5px; color:var(--sd-text-muted); margin:0;">
+        Your consumed quota for this request will be restored automatically.
+      </p>
+    </div>
+  `;
+
+  showAppModal('Cancel Leave Request', modalHtml, 'Confirm Cancellation', function() {
+    setModalConfirmLoading('Cancelling…');
+    callApi('Api_Leave_cancel', [leaveId], function() {
+      closeAppModal();
+      showToast('Leave application cancelled successfully', 'success');
+      loadMyLeaveData();
+    }, function(err) {
+      closeAppModal();
+      showToastError(err);
+    });
+  });
 }
 
+/* ---------- 6. Tab Switching Controller ---------- */
 function switchLeaveTab(tab) {
-  document.getElementById('tab-leave-apply').classList.toggle('active-tab', tab === 'apply');
-  document.getElementById('tab-leave-my').classList.toggle('active-tab', tab === 'my');
-  document.getElementById('tab-leave-approvals').classList.toggle('active-tab', tab === 'approvals');
+  document.getElementById('tab-leave-apply').classList.toggle('active', tab === 'apply');
+  document.getElementById('tab-leave-my').classList.toggle('active', tab === 'my');
+  const tabAppr = document.getElementById('tab-leave-approvals');
+  if (tabAppr) tabAppr.classList.toggle('active', tab === 'approvals');
 
   document.getElementById('leave-apply-container').style.display = tab === 'apply' ? 'block' : 'none';
   document.getElementById('leave-my-container').style.display = tab === 'my' ? 'block' : 'none';
   document.getElementById('leave-approvals-container').style.display = tab === 'approvals' ? 'block' : 'none';
 
-  if (tab === 'approvals') {
+  if (tab === 'my') {
+    if (leaveModuleData.requests && leaveModuleData.requests.length) {
+      renderMyLeaveHistory(leaveModuleData.requests);
+    } else {
+      loadMyLeaveData();
+    }
+  } else if (tab === 'approvals') {
     loadLeaveApprovals();
   }
 }
 
+/* ---------- 7. Team Approvals Queue (Manager / HR / Admin) ---------- */
 function loadLeaveApprovalsCount() {
   callApi('Api_Leave_getApprovals', [], function(list) {
     const badge = document.getElementById('badge-leave-approvals');
-    if (badge && list && list.length > 0) {
-      badge.textContent = list.length;
-      badge.style.display = 'inline-flex';
+    if (badge) {
+      if (list && list.length > 0) {
+        badge.textContent = list.length;
+        badge.style.display = 'inline-flex';
+      } else {
+        badge.style.display = 'none';
+      }
     }
   });
 }
 
 function loadLeaveApprovals() {
-  callApi('Api_Leave_getApprovals', [], function(list) {
-    const mount = document.getElementById('leave-approvals-mount');
-    if (!mount) return;
+  const mount = document.getElementById('leave-approvals-mount');
+  if (!mount) return;
 
+  mount.innerHTML = `
+    <div style="text-align:center; padding:40px; color:var(--sd-text-muted);">
+      <span class="sd-spinner"></span> Loading pending team leave requests…
+    </div>
+  `;
+
+  callApi('Api_Leave_getApprovals', [], function(list) {
+    leaveModuleData.approvals = list || [];
     if (!list || !list.length) {
-      mount.innerHTML = `<p style="text-align:center; padding:40px; color:var(--sd-text-muted);">No pending leave approvals in your queue</p>`;
+      mount.innerHTML = `
+        <div style="text-align:center; padding:48px 24px; color:var(--sd-text-muted);">
+          <div style="width:48px; height:48px; border-radius:50%; background:rgba(34,197,94,0.12); color:var(--sd-success); display:flex; align-items:center; justify-content:center; margin:0 auto 12px;">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px; height:24px;"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <h4 style="font-size:15px; font-weight:700; color:var(--sd-navy); margin:0 0 4px 0;">Approvals Queue is Clear</h4>
+          <p style="font-size:13px; margin:0;">All team leave applications have been actioned.</p>
+        </div>
+      `;
       return;
     }
 
-    mount.innerHTML = list.map(item => `
-      <div class="card" style="margin-bottom:16px; border-left:4px solid var(--sd-accent);">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-          <div>
-            <h4 style="font-size:15px; font-weight:700;">${item.employeeName} <code style="font-size:11px; color:var(--sd-text-muted);">(${item.empId})</code></h4>
-            <p style="font-size:12.5px; color:var(--sd-text-muted); margin-bottom:8px;">${item.department}</p>
-            <p style="font-size:13.5px; color:var(--sd-text-primary); margin-bottom:4px;">
-              <strong>${item.leaveType} Leave:</strong> ${item.fromDate} to ${item.toDate} (<strong>${item.dayCount} days</strong>)
-            </p>
-            <p style="font-size:13px; color:var(--sd-text-secondary); font-style:italic;">"${item.reason || 'No reason provided'}"</p>
+    mount.innerHTML = list.map(item => {
+      const datesSpan = item.fromDate === item.toDate ? item.fromDate : `${item.fromDate} to ${item.toDate}`;
+      const initials = (item.employeeName || 'Staff').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+      
+      const balObj = (item.currentBalances || []).find(b => b.leaveType === item.leaveType);
+      const remBal = balObj ? balObj.balance : 'N/A';
+
+      return `
+        <div class="card" style="padding:18px 20px; margin-bottom:16px; border:1px solid var(--sd-border); border-left:4px solid var(--sd-primary); display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+          <div style="display:flex; align-items:flex-start; gap:14px; min-width:280px; flex:1;">
+            <div class="avatar" style="width:44px; height:44px; font-size:14px; font-weight:700; background:#0B1635; color:#FFF; flex-shrink:0;">
+              ${initials}
+            </div>
+            <div>
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <h4 style="font-size:15px; font-weight:700; color:var(--sd-navy); margin:0;">${escapeHtml(item.employeeName)}</h4>
+                <span class="pill pill-ghost" style="font-size:11px; padding:1px 6px;">${escapeHtml(item.empId)}</span>
+                <span style="font-size:12px; color:var(--sd-text-muted);">• ${escapeHtml(item.department || 'General')}</span>
+              </div>
+              
+              <div style="margin-top:6px; font-size:13.5px; color:var(--sd-navy);">
+                <strong style="color:var(--sd-primary);">${item.leaveType} Leave</strong> • 
+                <span style="font-family:'JetBrains Mono',monospace;">${datesSpan}</span> 
+                (<strong>${item.dayCount} day${item.dayCount > 1 ? 's' : ''}</strong>${item.isHalfDay ? ` - ${item.halfSession}` : ''})
+              </div>
+
+              <div style="margin-top:8px; padding:8px 12px; background:var(--sd-surface-subtle); border-radius:6px; font-size:12.5px; color:var(--sd-text-secondary); font-style:italic;">
+                "${escapeHtml(item.reason || 'No context provided')}"
+              </div>
+
+              <div style="margin-top:8px; font-size:12px; color:var(--sd-text-muted);">
+                Employee Quota Remaining: <strong style="color:var(--sd-navy);">${remBal} days</strong>
+              </div>
+            </div>
           </div>
-          <div style="display:flex; gap:8px;">
-            <button class="btn btn-primary btn-sm" onclick="approveLeave('${item.leaveId}')">Approve</button>
-            <button class="btn btn-danger btn-sm" onclick="openRejectLeaveModal('${item.leaveId}')">Reject</button>
+
+          <!-- Action Buttons -->
+          <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+            <button class="button button-success button-sm" type="button" onclick="approveLeave('${item.leaveId}')" title="Approve leave request">
+              <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Approve</span>
+            </button>
+            <button class="button button-danger button-sm" type="button" onclick="openRejectLeaveModal('${item.leaveId}')" title="Reject leave request">
+              <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <span>Reject</span>
+            </button>
           </div>
         </div>
+      `;
+    }).join('');
+  }, function(err) {
+    mount.innerHTML = `
+      <div style="text-align:center; padding:32px; color:var(--sd-danger);">
+        Failed to load approvals queue: ${escapeHtml(err?.message || err || 'Unknown error')}
       </div>
-    `).join('');
-  }, showToastError);
+    `;
+  });
 }
 
 function approveLeave(leaveId) {
-  callApi('Api_Leave_approve', [leaveId, 'Approved'], function() {
-    showToast('Leave request approved', 'success');
+  callApi('Api_Leave_approve', [leaveId, 'Approved by manager'], function() {
+    showToast('Leave request approved successfully!', 'success');
     loadLeaveApprovals();
     loadLeaveApprovalsCount();
   }, showToastError);
@@ -326,24 +676,33 @@ function approveLeave(leaveId) {
 
 function openRejectLeaveModal(leaveId) {
   const bodyHtml = `
-    <div class="form-group">
-      <label class="form-label">Rejection Remark * (Sent to employee)</label>
-      <textarea id="leave-reject-remarks" class="form-control" placeholder="Provide reason for rejection..." required></textarea>
+    <div style="padding:4px 0;">
+      <p style="font-size:13.5px; color:var(--sd-text-secondary); margin:0 0 14px 0;">
+        Please state the reason for rejecting this request. This remark will be sent directly to the employee.
+      </p>
+      <div class="form-group">
+        <label class="form-label" for="leave-reject-remarks">Rejection Remark *</label>
+        <textarea id="leave-reject-remarks" class="form-control" rows="3" placeholder="e.g. Critical project deadline on these dates..." required style="resize:vertical;"></textarea>
+      </div>
     </div>
   `;
 
-  showAppModal('Decline Leave Request', bodyHtml, 'Confirm Rejection', function() {
-    const remarks = document.getElementById('leave-reject-remarks')?.value;
+  showAppModal('Reject Leave Request', bodyHtml, 'Confirm Rejection', function() {
+    const remarks = document.getElementById('leave-reject-remarks')?.value.trim();
     if (!remarks) {
-      showToast('Rejection remark is required.', 'warning');
+      showToast('A rejection remark is required.', 'warning');
       return;
     }
+    setModalConfirmLoading('Rejecting…');
     callApi('Api_Leave_reject', [leaveId, remarks], function() {
       closeAppModal();
       showToast('Leave request rejected', 'info');
       loadLeaveApprovals();
       loadLeaveApprovalsCount();
-    }, showToastError);
+    }, function(err) {
+      closeAppModal();
+      showToastError(err);
+    });
   });
 }
 </script>
