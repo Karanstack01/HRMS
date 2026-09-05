@@ -528,10 +528,9 @@
     outline-offset: 2px !important;
   }
   .button:disabled, .btn:disabled {
-    opacity: 0.55 !important;
+    opacity: 0.8 !important;
     cursor: not-allowed !important;
     transform: none !important;
-    box-shadow: none !important;
   }
 
   /* Primary Button (StackDrove Royal Blue #2563EB) */
@@ -567,8 +566,41 @@
     transform: translateY(-1px) !important;
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06) !important;
   }
-  .button-secondary:active, .btn-secondary:active {
-    background: #F1F5F9 !important;
+  /* Success Button (Emerald Green #16A34A for Clock In) */
+  .button-success, .btn-success, .button-punch-in {
+    background: #16A34A !important;
+    color: #FFFFFF !important;
+    border: 1px solid #15803D !important;
+    box-shadow: 0 1px 3px rgba(22, 163, 74, 0.35) !important;
+  }
+  .button-success:hover, .btn-success:hover, .button-punch-in:hover {
+    background: #15803D !important;
+    border-color: #166534 !important;
+    color: #FFFFFF !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.45) !important;
+  }
+  .button-success:active, .btn-success:active, .button-punch-in:active {
+    background: #166534 !important;
+    transform: translateY(0) !important;
+  }
+
+  /* Danger Button (Rose Red #DC2626 for Clock Out) */
+  .button-danger, .btn-danger, .button-punch-out {
+    background: #DC2626 !important;
+    color: #FFFFFF !important;
+    border: 1px solid #B91C1C !important;
+    box-shadow: 0 1px 3px rgba(220, 38, 38, 0.35) !important;
+  }
+  .button-danger:hover, .btn-danger:hover, .button-punch-out:hover {
+    background: #B91C1C !important;
+    border-color: #991B1B !important;
+    color: #FFFFFF !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.45) !important;
+  }
+  .button-danger:active, .btn-danger:active, .button-punch-out:active {
+    background: #991B1B !important;
     transform: translateY(0) !important;
   }
 

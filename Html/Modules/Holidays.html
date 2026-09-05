@@ -1,152 +1,507 @@
 <div id="module-holidays" class="module-container" style="display:none;">
-  <div class="page-header">
+  <!-- Page Header matching StackDrove standard -->
+  <div class="page-head">
     <div>
-      <h1 class="page-title">Company Holidays Calendar</h1>
-      <p class="page-subtitle">Official public holidays, regional festivals, and company non-working days.</p>
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <span>StackDrove HRMS</span>
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="m9 18 6-6-6-6"/></svg>
+        <span class="current">Holiday Calendar</span>
+      </nav>
+      <h1>Holiday Calendar 2026</h1>
+      <p>Official public holidays, regional festivals, and company non-working days for all office locations.</p>
     </div>
-    <div>
-      <button class="btn btn-primary btn-sm" id="btn-add-holiday" onclick="openAddHolidayModal()" style="display:none;">
-        <span class="icon-slot" data-icon="plus"></span>
+
+    <div class="head-actions">
+      <button class="button button-ghost button-sm" type="button" onclick="loadModule_holidays()" title="Re-sync with Sheet">
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+        <span>Refresh</span>
+      </button>
+
+      <button class="button button-primary button-sm" id="btn-add-holiday" onclick="openAddHolidayModal()" style="display:none;" title="Add a new holiday">
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         <span>Add Holiday</span>
       </button>
     </div>
   </div>
 
-  <div class="card" style="margin-bottom:24px;">
-    <div class="card-header">
-      <h3 class="card-title">Year 2026 Holiday Schedule</h3>
+  <!-- Top 3 KPI Summary Cards -->
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:24px;">
+    <!-- Total Holidays -->
+    <div class="card" style="padding:18px 20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:11.5px; color:var(--sd-text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Total Holidays (2026)</span>
+        <div style="width:34px; height:34px; border-radius:8px; background:rgba(37, 99, 235, 0.12); display:flex; align-items:center; justify-content:center;">
+          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="var(--sd-primary)" stroke-width="2" style="width:18px;height:18px;"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+        </div>
+      </div>
+      <h3 style="font-size:26px; font-weight:800; color:var(--sd-navy); margin-top:8px; margin-bottom:4px;" id="kpi-holidays-total">--</h3>
+      <div style="font-size:12px; color:var(--sd-text-muted); font-weight:500;">Approved company non-working days</div>
     </div>
-    <div class="table-container" style="border:none; box-shadow:none;">
-      <table class="data-table">
+
+    <!-- Next Upcoming Holiday -->
+    <div class="card" style="padding:18px 20px; border-left:4px solid var(--sd-success);">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:11.5px; color:var(--sd-text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Next Upcoming Holiday</span>
+        <div style="width:34px; height:34px; border-radius:8px; background:rgba(22, 163, 74, 0.12); display:flex; align-items:center; justify-content:center;">
+          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="var(--sd-success)" stroke-width="2" style="width:18px;height:18px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px; margin-bottom:4px; flex-wrap:wrap; gap:6px;">
+        <h3 style="font-size:18px; font-weight:800; color:var(--sd-navy); margin:0;" id="kpi-holidays-next-name">--</h3>
+        <span class="pill pill-approved" id="kpi-holidays-next-countdown" style="font-size:11px; padding:2px 8px; display:none;">In -- days</span>
+      </div>
+      <div style="font-size:12px; color:var(--sd-text-muted); font-weight:500;" id="kpi-holidays-next-date">Checking schedule…</div>
+    </div>
+
+    <!-- Long Weekends -->
+    <div class="card" style="padding:18px 20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:11.5px; color:var(--sd-text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Long Weekends</span>
+        <div style="width:34px; height:34px; border-radius:8px; background:rgba(217, 119, 6, 0.12); display:flex; align-items:center; justify-content:center;">
+          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="var(--sd-warning)" stroke-width="2" style="width:18px;height:18px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+      </div>
+      <h3 style="font-size:26px; font-weight:800; color:var(--sd-navy); margin-top:8px; margin-bottom:4px;" id="kpi-holidays-weekends">--</h3>
+      <div style="font-size:12px; color:var(--sd-text-muted); font-weight:500;">Holidays adjacent to weekends (Fri/Mon)</div>
+    </div>
+  </div>
+
+  <!-- Search, Filter & View Controls -->
+  <div class="card" style="padding:16px 20px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+    <!-- Left: Search and Filters -->
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; flex:1; min-width:280px;">
+      <div style="position:relative; width:260px;">
+        <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--sd-text-muted); pointer-events:none; display:flex; align-items:center;">
+          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </span>
+        <input type="text" id="hol-search-input" placeholder="Search holiday name, notes..." 
+               class="form-control" style="padding-left:34px; height:36px; font-size:12.5px;" oninput="filterHolidays()">
+      </div>
+
+      <select id="hol-type-filter" class="filter-select" style="height:36px; min-width:140px;" onchange="filterHolidays()">
+        <option value="ALL">All Categories</option>
+        <option value="National">National Holiday</option>
+        <option value="Festival">Festival</option>
+        <option value="Restricted">Restricted Holiday</option>
+      </select>
+
+      <select id="hol-loc-filter" class="filter-select" style="height:36px; min-width:130px;" onchange="filterHolidays()">
+        <option value="ALL">All Locations</option>
+      </select>
+    </div>
+
+    <!-- Right: Segmented View Switcher -->
+    <div class="segmented" role="tablist" style="margin:0;">
+      <button type="button" class="active" id="btn-view-table" onclick="switchHolidaysView('table')">
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        <span>Table View</span>
+      </button>
+      <button type="button" id="btn-view-cards" onclick="switchHolidaysView('cards')">
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+        <span>Monthly Cards</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- VIEW 1: TABLE VIEW -->
+  <div id="holidays-view-table" class="card" style="padding:22px;">
+    <div class="table-container" style="border:1px solid var(--sd-border); border-radius:10px; overflow:hidden;">
+      <table class="table" style="margin:0;">
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Holiday Name</th>
-            <th>Category</th>
-            <th>Applicable Locations</th>
-            <th>Description</th>
-            <th style="text-align:right;" class="admin-only-col">Action</th>
+            <th style="width:170px;">Date</th>
+            <th style="width:130px;">Day of Week</th>
+            <th>Holiday Name &amp; Context</th>
+            <th style="width:140px;">Category</th>
+            <th style="width:130px;">Applicable Office</th>
+            <th style="width:90px; text-align:right;" class="admin-only-col">Action</th>
           </tr>
         </thead>
         <tbody id="holidays-table-tbody">
-          <!-- Populated via JS -->
+          <tr>
+            <td colspan="6" style="text-align:center; padding:36px; color:var(--sd-text-muted);">
+              <span class="sd-spinner"></span> Loading holiday schedule…
+            </td>
+          </tr>
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- VIEW 2: MONTHLY CARDS GRID VIEW -->
+  <div id="holidays-view-cards" style="display:none;">
+    <div id="holidays-monthly-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:18px;">
+      <!-- Generated via JS -->
     </div>
   </div>
 </div>
 
 <script>
+/* ============================================================
+   Holiday Calendar Module Logic (StackDrove HRMS)
+   ============================================================ */
+
+function escapeHtml(text) {
+  if (text === null || text === undefined) return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 let holidaysCache = [];
+let currentHolidaysView = 'table';
 
 function loadModule_holidays() {
   const user = App.user;
-  if (user && (user.role === 'admin' || user.role === 'hr')) {
-    document.getElementById('btn-add-holiday').style.display = 'inline-flex';
-  }
+  const isPrivileged = user && (user.role === 'admin' || user.role === 'hr');
+  
+  const addBtn = document.getElementById('btn-add-holiday');
+  if (addBtn) addBtn.style.display = isPrivileged ? 'inline-flex' : 'none';
 
   callApi('Api_Holidays_list', [], function(list) {
     holidaysCache = list || [];
+    populateLocationFilter(holidaysCache);
+    updateHolidaysKpis(holidaysCache);
     renderHolidaysTable(holidaysCache);
-  }, showToastError);
+    renderHolidaysMonthlyGrid(holidaysCache);
+  }, function(err) {
+    showToastError(err);
+  });
 }
 
+window.loadModule_holidays = loadModule_holidays;
+
+/* ---------- 1. KPIs: Total, Next Countdown & Long Weekends ---------- */
+function updateHolidaysKpis(list) {
+  const totalEl = document.getElementById('kpi-holidays-total');
+  const nextNameEl = document.getElementById('kpi-holidays-next-name');
+  const nextDateEl = document.getElementById('kpi-holidays-next-date');
+  const nextCountdownEl = document.getElementById('kpi-holidays-next-countdown');
+  const weekendsEl = document.getElementById('kpi-holidays-weekends');
+
+  if (totalEl) totalEl.textContent = `${list.length} Days`;
+
+  // Count long weekends (Friday or Monday)
+  let longWeekendsCount = 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let nextHoliday = null;
+  let minDiff = Infinity;
+
+  list.forEach(h => {
+    if (!h.date) return;
+    const d = new Date(h.date + 'T00:00:00');
+    const dayOfWeek = d.getDay(); // 0 = Sun, 1 = Mon, 5 = Fri, 6 = Sat
+    if (dayOfWeek === 1 || dayOfWeek === 5) {
+      longWeekendsCount++;
+    }
+
+    const diffMs = d.getTime() - today.getTime();
+    if (diffMs >= 0 && diffMs < minDiff) {
+      minDiff = diffMs;
+      nextHoliday = h;
+    }
+  });
+
+  if (weekendsEl) weekendsEl.textContent = `${longWeekendsCount} Weekends`;
+
+  if (nextHoliday) {
+    const daysRemaining = Math.round(minDiff / (1000 * 60 * 60 * 24));
+    const d = new Date(nextHoliday.date + 'T00:00:00');
+    const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+
+    if (nextNameEl) nextNameEl.textContent = nextHoliday.name;
+    if (nextDateEl) nextDateEl.textContent = d.toLocaleDateString('en-US', options);
+    if (nextCountdownEl) {
+      nextCountdownEl.textContent = daysRemaining === 0 ? 'Today 🎉' : `In ${daysRemaining} day${daysRemaining > 1 ? 's' : ''}`;
+      nextCountdownEl.style.display = 'inline-flex';
+    }
+  } else {
+    if (nextNameEl) nextNameEl.textContent = 'All Completed';
+    if (nextDateEl) nextDateEl.textContent = 'No more holidays remaining in 2026';
+    if (nextCountdownEl) nextCountdownEl.style.display = 'none';
+  }
+}
+
+/* ---------- 2. Populate Location Filter Options ---------- */
+function populateLocationFilter(list) {
+  const sel = document.getElementById('hol-loc-filter');
+  if (!sel) return;
+
+  const locs = new Set();
+  list.forEach(h => {
+    if (h.applicableLocations && h.applicableLocations !== 'ALL') {
+      h.applicableLocations.split(',').forEach(l => {
+        const trimmed = l.trim();
+        if (trimmed) locs.add(trimmed);
+      });
+    }
+  });
+
+  let opts = '<option value="ALL">All Locations</option>';
+  locs.forEach(l => {
+    opts += `<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`;
+  });
+  sel.innerHTML = opts;
+}
+
+/* ---------- 3. Render Table View ---------- */
 function renderHolidaysTable(list) {
   const tbody = document.getElementById('holidays-table-tbody');
   if (!tbody) return;
 
-  if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--sd-text-muted);">No holidays configured for this year.</td></tr>`;
+  if (!list || !list.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:36px; color:var(--sd-text-muted);">No holidays match the selected filter.</td></tr>`;
     return;
   }
 
   const isPrivileged = App.user && (App.user.role === 'admin' || App.user.role === 'hr');
 
   tbody.innerHTML = list.map(h => {
-    const d = new Date(h.date);
-    const dayName = d.toLocaleDateString('en-US', { weekday: 'long' });
+    const d = new Date(h.date + 'T00:00:00');
+    const monthStr = d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+    const dayNum = String(d.getDate()).padStart(2, '0');
+    const weekday = d.toLocaleDateString('en-US', { weekday: 'long' });
+    const isLongWeekend = (d.getDay() === 1 || d.getDay() === 5);
+
+    const pillClass = h.type === 'National' ? 'pill-approved' : 
+                     (h.type === 'Festival' ? 'pill-pending' : 'pill-ghost');
+
     return `
       <tr>
         <td>
-          <strong>${h.date}</strong>
-          <div style="font-size:11px; color:var(--sd-text-muted);">${dayName}</div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <!-- Calendar Date Block -->
+            <div style="width:42px; border-radius:8px; overflow:hidden; border:1px solid var(--sd-border); text-align:center; box-shadow:0 1px 2px rgba(0,0,0,0.04); flex-shrink:0;">
+              <div style="background:var(--sd-primary); color:#FFF; font-size:9.5px; font-weight:800; letter-spacing:0.5px; padding:2px 0;">${monthStr}</div>
+              <div style="font-size:15px; font-weight:800; color:var(--sd-navy); padding:2px 0; font-family:'JetBrains Mono',monospace;">${dayNum}</div>
+            </div>
+            <div>
+              <strong style="font-size:13px; color:var(--sd-navy); font-family:'JetBrains Mono',monospace;">${h.date}</strong>
+            </div>
+          </div>
         </td>
-        <td><strong>${h.name}</strong></td>
-        <td><span class="pill pill-${h.type === 'Festival' ? 'warning' : 'holiday'}">${h.type}</span></td>
-        <td><code>${h.applicableLocations}</code></td>
-        <td><span style="font-size:12.5px; color:var(--sd-text-secondary);">${h.description || '—'}</span></td>
-        <td style="text-align:right;">
+        <td>
+          <div style="font-size:13px; font-weight:600; color:var(--sd-navy);">${weekday}</div>
+          ${isLongWeekend ? `
+            <span class="pill pill-approved" style="font-size:10px; padding:1px 6px; margin-top:3px; display:inline-flex;">
+              🎉 3-Day Weekend
+            </span>
+          ` : ''}
+        </td>
+        <td>
+          <div style="font-size:13.5px; font-weight:700; color:var(--sd-navy);">${escapeHtml(h.name)}</div>
+          <div style="font-size:12px; color:var(--sd-text-muted); margin-top:2px;">${escapeHtml(h.description || 'General company holiday')}</div>
+        </td>
+        <td>
+          <span class="pill ${pillClass}">${escapeHtml(h.type)}</span>
+        </td>
+        <td>
+          <div style="display:inline-flex; align-items:center; gap:5px; font-size:12px; color:var(--sd-text-secondary); background:var(--sd-surface-subtle); padding:3px 8px; border-radius:6px; border:1px solid var(--sd-border);">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span>${escapeHtml(h.applicableLocations || 'ALL')}</span>
+          </div>
+        </td>
+        <td style="text-align:right;" class="admin-only-col">
           ${isPrivileged ? `
-            <button class="btn btn-secondary btn-sm" onclick="deleteHoliday('${h.holidayId}')">Delete</button>
-          ` : '—'}
+            <button class="button button-ghost button-sm" type="button" onclick="confirmDeleteHoliday('${escapeHtml(h.holidayId)}', '${escapeHtml(h.name)}')" title="Delete Holiday" style="color:var(--sd-danger); padding:4px 8px;">
+              <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            </button>
+          ` : '<span style="color:var(--sd-text-muted);">—</span>'}
         </td>
       </tr>
     `;
   }).join('');
 }
 
-function openAddHolidayModal() {
-  const bodyHtml = `
-    <form id="add-holiday-form">
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Date *</label>
-          <input type="date" id="hol-date" class="form-control" required>
+/* ---------- 4. Render Monthly Cards View ---------- */
+function renderHolidaysMonthlyGrid(list) {
+  const mount = document.getElementById('holidays-monthly-grid');
+  if (!mount) return;
+
+  if (!list || !list.length) {
+    mount.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--sd-text-muted);">No holidays configured.</div>`;
+    return;
+  }
+
+  // Group holidays by Month (0-11)
+  const monthMap = {};
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+  list.forEach(h => {
+    if (!h.date) return;
+    const d = new Date(h.date + 'T00:00:00');
+    const mIdx = d.getMonth();
+    monthMap[mIdx] = monthMap[mIdx] || [];
+    monthMap[mIdx].push(h);
+  });
+
+  let cardsHtml = '';
+  monthNames.forEach((name, idx) => {
+    const items = monthMap[idx];
+    if (!items || !items.length) return; // Only render active months with holidays
+
+    cardsHtml += `
+      <div class="card" style="padding:18px 20px; border:1px solid var(--sd-border);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--sd-border); padding-bottom:10px;">
+          <h4 style="font-size:15px; font-weight:800; color:var(--sd-navy); margin:0;">${name} 2026</h4>
+          <span class="pill pill-ghost" style="font-size:11px; padding:2px 7px;">${items.length} holiday${items.length > 1 ? 's' : ''}</span>
         </div>
-        <div class="form-group">
-          <label class="form-label">Holiday Name *</label>
-          <input type="text" id="hol-name" class="form-control" placeholder="Independence Day" required>
+
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          ${items.map(h => {
+            const d = new Date(h.date + 'T00:00:00');
+            const dayNum = d.getDate();
+            const weekday = d.toLocaleDateString('en-US', { weekday: 'short' });
+            const isLongWeekend = (d.getDay() === 1 || d.getDay() === 5);
+
+            return `
+              <div style="display:flex; align-items:flex-start; gap:10px; padding:8px 10px; background:var(--sd-surface-subtle); border-radius:8px; border:1px solid var(--sd-border);">
+                <div style="width:36px; height:36px; border-radius:8px; background:var(--sd-primary); color:#FFF; display:flex; flex-direction:column; align-items:center; justify-content:center; flex-shrink:0; font-family:'JetBrains Mono',monospace;">
+                  <span style="font-size:13px; font-weight:800; line-height:1;">${dayNum}</span>
+                  <span style="font-size:9px; font-weight:600; text-transform:uppercase;">${weekday}</span>
+                </div>
+                <div style="flex:1; min-width:0;">
+                  <div style="font-size:13px; font-weight:700; color:var(--sd-navy); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(h.name)}">${escapeHtml(h.name)}</div>
+                  <div style="display:flex; align-items:center; gap:6px; margin-top:3px; flex-wrap:wrap;">
+                    <span style="font-size:10.5px; color:var(--sd-text-muted);">${escapeHtml(h.type)}</span>
+                    ${isLongWeekend ? '<span style="font-size:10px; color:var(--sd-success); font-weight:700;">• 3D Weekend</span>' : ''}
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
         </div>
       </div>
-      <div class="form-row">
+    `;
+  });
+
+  mount.innerHTML = cardsHtml;
+}
+
+/* ---------- 5. Filter Handler ---------- */
+function filterHolidays() {
+  const q = (document.getElementById('hol-search-input')?.value || '').toLowerCase().trim();
+  const type = document.getElementById('hol-type-filter')?.value || 'ALL';
+  const loc = document.getElementById('hol-loc-filter')?.value || 'ALL';
+
+  const filtered = holidaysCache.filter(h => {
+    const matchQ = !q || (h.name && h.name.toLowerCase().includes(q)) || (h.description && h.description.toLowerCase().includes(q)) || (h.date && h.date.includes(q));
+    const matchType = (type === 'ALL') || (h.type === type);
+    const matchLoc = (loc === 'ALL') || (h.applicableLocations && (h.applicableLocations === 'ALL' || h.applicableLocations.includes(loc)));
+    return matchQ && matchType && matchLoc;
+  });
+
+  renderHolidaysTable(filtered);
+  renderHolidaysMonthlyGrid(filtered);
+}
+
+/* ---------- 6. Switch Table vs Monthly Cards View ---------- */
+function switchHolidaysView(view) {
+  currentHolidaysView = view;
+  document.getElementById('btn-view-table').classList.toggle('active', view === 'table');
+  document.getElementById('btn-view-cards').classList.toggle('active', view === 'cards');
+
+  document.getElementById('holidays-view-table').style.display = view === 'table' ? 'block' : 'none';
+  document.getElementById('holidays-view-cards').style.display = view === 'cards' ? 'block' : 'none';
+}
+
+/* ---------- 7. In-App Modals: Add Holiday & Delete ---------- */
+function openAddHolidayModal() {
+  const bodyHtml = `
+    <form id="add-holiday-form" onsubmit="event.preventDefault();">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
         <div class="form-group">
-          <label class="form-label">Category</label>
-          <select id="hol-type" class="form-control">
+          <label class="form-label" for="hol-modal-date">Holiday Date *</label>
+          <input type="date" id="hol-modal-date" class="form-control" required value="${new Date().toISOString().split('T')[0]}">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="hol-modal-type">Category *</label>
+          <select id="hol-modal-type" class="form-control">
             <option value="National">National Holiday</option>
             <option value="Festival">Festival</option>
             <option value="Restricted">Restricted Holiday</option>
           </select>
         </div>
-        <div class="form-group">
-          <label class="form-label">Applicable Locations</label>
-          <input type="text" id="hol-locations" class="form-control" value="ALL" placeholder="ALL, Bangalore, Delhi">
-        </div>
       </div>
+
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label" for="hol-modal-name">Holiday Title / Name *</label>
+        <input type="text" id="hol-modal-name" class="form-control" placeholder="e.g. Diwali (Deepavali)" required>
+      </div>
+
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label" for="hol-modal-locations">Applicable Locations</label>
+        <input type="text" id="hol-modal-locations" class="form-control" value="ALL" placeholder="ALL or comma separated (e.g. Bangalore, Delhi)">
+      </div>
+
       <div class="form-group">
-        <label class="form-label">Description</label>
-        <textarea id="hol-desc" class="form-control" placeholder="Optional notes..."></textarea>
+        <label class="form-label" for="hol-modal-desc">Description / Notes</label>
+        <textarea id="hol-modal-desc" class="form-control" rows="2" placeholder="Brief note or celebration context..."></textarea>
       </div>
     </form>
   `;
 
-  showAppModal('Add Holiday to Calendar', bodyHtml, 'Add Holiday', function() {
-    const payload = {
-      date: document.getElementById('hol-date').value,
-      name: document.getElementById('hol-name').value,
-      type: document.getElementById('hol-type').value,
-      applicableLocations: document.getElementById('hol-locations').value,
-      description: document.getElementById('hol-desc').value,
-      requestId: newRequestId()
-    };
+  showAppModal('Add Holiday to 2026 Calendar', bodyHtml, 'Create Holiday', function() {
+    const date = document.getElementById('hol-modal-date')?.value;
+    const name = document.getElementById('hol-modal-name')?.value.trim();
+    const type = document.getElementById('hol-modal-type')?.value;
+    const loc = document.getElementById('hol-modal-locations')?.value.trim() || 'ALL';
+    const desc = document.getElementById('hol-modal-desc')?.value.trim();
 
-    if (!payload.date || !payload.name) {
-      showToast('Date and Name are required.', 'warning');
+    if (!date || !name) {
+      showToast('Holiday date and title are required.', 'warning');
       return;
     }
 
+    setModalConfirmLoading('Saving…');
+
+    const payload = {
+      date: date,
+      name: name,
+      type: type,
+      applicableLocations: loc,
+      description: desc,
+      requestId: (typeof newRequestId === 'function') ? newRequestId() : ('req_' + Date.now())
+    };
+
     callApi('Api_Holidays_create', [payload], function() {
       closeAppModal();
-      showToast('Holiday added to calendar', 'success');
+      showToast('Holiday successfully added to calendar!', 'success');
       loadModule_holidays();
-    }, showToastError);
+    }, function(err) {
+      closeAppModal();
+      showToastError(err);
+    });
   });
 }
 
-function deleteHoliday(holidayId) {
-  if (!confirm('Are you sure you want to delete this holiday?')) return;
-  callApi('Api_Holidays_delete', [holidayId], function() {
-    showToast('Holiday deleted', 'info');
-    loadModule_holidays();
-  }, showToastError);
+function confirmDeleteHoliday(holidayId, name) {
+  const modalHtml = `
+    <div style="padding:6px 0;">
+      <p style="font-size:14px; color:var(--sd-navy); line-height:1.5; margin:0 0 10px 0;">
+        Are you sure you want to delete <strong>${escapeHtml(name)}</strong> from the company calendar?
+      </p>
+      <p style="font-size:12.5px; color:var(--sd-text-muted); margin:0;">
+        This action cannot be undone. Attendance calculations will adjust immediately.
+      </p>
+    </div>
+  `;
+
+  showAppModal('Delete Holiday', modalHtml, 'Confirm Deletion', function() {
+    setModalConfirmLoading('Deleting…');
+    callApi('Api_Holidays_delete', [holidayId], function() {
+      closeAppModal();
+      showToast('Holiday deleted from calendar', 'info');
+      loadModule_holidays();
+    }, function(err) {
+      closeAppModal();
+      showToastError(err);
+    });
+  });
 }
 </script>

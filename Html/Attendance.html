@@ -1,140 +1,195 @@
 <div id="module-attendance" class="module-container" style="display:none;">
-  <div class="page-header">
+  <!-- Page Header matching StackDrove standard -->
+  <div class="page-head">
     <div>
-      <h1 class="page-title">Attendance & Time Tracking</h1>
-      <p class="page-subtitle">Daily clock-in logs, worked hours, team monitoring, and regularization requests.</p>
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <span>StackDrove HRMS</span>
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><path d="m9 18 6-6-6-6"></path></svg>
+        <span class="current">Attendance</span>
+      </nav>
+      <h1>Attendance & Time Tracking</h1>
+      <p id="att-sub-heading">Daily clock-in logs, worked hours, team monitoring, and regularization requests.</p>
     </div>
-    <div style="display:flex; gap:12px;">
-      <select id="att-year-picker" class="filter-select" onchange="loadAttendanceData()">
-        <option value="2026">2026</option>
-        <option value="2025">2025</option>
-      </select>
-      <select id="att-month-picker" class="filter-select" onchange="loadAttendanceData()">
-        <option value="1">January</option>
-        <option value="2">February</option>
-        <option value="3">March</option>
-        <option value="4">April</option>
-        <option value="5">May</option>
-        <option value="6">June</option>
-        <option value="7">July</option>
-        <option value="8">August</option>
-        <option value="9">September</option>
-        <option value="10">October</option>
-        <option value="11">November</option>
-        <option value="12">December</option>
-      </select>
+    
+    <div class="head-actions">
+      <!-- Month & Year Pickers -->
+      <div style="display:flex; gap:8px; align-items:center;">
+        <select id="att-month-picker" class="filter-select" onchange="this.dataset.userSelected='true'; loadAttendanceData();" aria-label="Select month" style="min-width:130px;">
+          <option value="1">January</option>
+          <option value="2">February</option>
+          <option value="3">March</option>
+          <option value="4">April</option>
+          <option value="5">May</option>
+          <option value="6">June</option>
+          <option value="7">July</option>
+          <option value="8">August</option>
+          <option value="9">September</option>
+          <option value="10">October</option>
+          <option value="11">November</option>
+          <option value="12">December</option>
+        </select>
+        <select id="att-year-picker" class="filter-select" onchange="this.dataset.userSelected='true'; loadAttendanceData();" aria-label="Select year" style="min-width:90px;">
+          <option value="2026">2026</option>
+          <option value="2025">2025</option>
+        </select>
+        <button class="button button-ghost button-sm" type="button" onclick="loadAttendanceData()" title="Re-sync with Sheet">
+          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+        </button>
+      </div>
     </div>
   </div>
 
-  <!-- Live Clock & Punch Desk Banner -->
-  <div class="card" style="padding:22px 28px; margin-bottom:24px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:20px; background:var(--sd-surface); border:1px solid var(--sd-border); border-left:5px solid var(--sd-primary);">
-    <div>
-      <div style="font-size:11.5px; font-weight:700; color:var(--sd-text-muted); text-transform:uppercase; letter-spacing:0.8px;">Live Punch Station</div>
-      <div id="att-live-clock" style="font-size:28px; font-weight:800; color:var(--sd-navy); font-family:'JetBrains Mono',monospace; margin-top:2px;">00:00:00</div>
-      <div id="att-punch-status-note" style="font-size:13px; color:var(--sd-text-secondary); margin-top:2px;">Ready to record punch</div>
+  <!-- Live Clock & Quick Punch Desk Banner -->
+  <div class="card" style="padding:20px 24px; margin-bottom:24px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:18px; background:var(--sd-surface); border:1px solid var(--sd-border); border-left:5px solid var(--sd-primary); box-shadow:var(--sd-shadow-card);">
+    <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+      <div class="avatar" style="width:52px; height:52px; font-size:18px; background:#0B1635; color:#FFF; box-shadow:0 3px 8px rgba(0,0,0,0.12); flex-shrink:0;">
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:26px; height:26px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div>
+        <div style="font-size:11px; font-weight:700; color:var(--sd-text-muted); text-transform:uppercase; letter-spacing:0.8px;">Digital Time Station</div>
+        <div id="att-live-clock" style="font-size:26px; font-weight:800; color:var(--sd-navy); font-family:'JetBrains Mono',monospace; letter-spacing:-0.5px;">--:--:--</div>
+        <div id="att-punch-status-note" style="font-size:13px; color:var(--sd-text-secondary); margin-top:2px;">Checking today's punch state…</div>
+      </div>
     </div>
-    <div style="display:flex; align-items:center; gap:14px;">
-      <button id="att-main-punch-btn" class="btn btn-primary" onclick="triggerQuickPunch()" style="padding:11px 26px; font-size:14px; font-weight:600; border-radius:var(--sd-radius-md); box-shadow:0 1px 3px rgba(0,0,0,0.08);">
-        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px;">
-          <circle cx="12" cy="12" r="10"></circle>
-          <polyline points="12 6 12 12 16 14"></polyline>
-        </svg>
+
+    <!-- Punch In / Out Button with Active Spinner -->
+    <div style="display:flex; align-items:center; gap:12px;">
+      <button id="att-main-punch-btn" class="button button-success" onclick="triggerAttendancePunch()" 
+              style="padding:10px 24px; font-size:14px; font-weight:700; background:#16A34A !important; border:1px solid #15803D !important; color:#FFFFFF !important; min-width:145px; display:inline-flex; align-items:center; justify-content:center; gap:8px;">
+        <span id="att-punch-btn-icon" style="display:inline-flex; align-items:center;">
+          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </span>
         <span id="att-main-punch-label">Clock In</span>
       </button>
     </div>
   </div>
 
-  <!-- Sub-Tabs: My Attendance vs Team Attendance -->
-  <div style="display:flex; gap:16px; margin-bottom:20px; border-bottom:1px solid var(--sd-border); padding-bottom:12px;">
-    <button class="btn btn-secondary btn-sm active-tab" id="tab-att-my" onclick="switchAttTab('my')">My Timesheet</button>
-    <button class="btn btn-secondary btn-sm" id="tab-att-team" onclick="switchAttTab('team')" style="display:none;">Team Today</button>
+  <!-- Sub-Tabs: Segmented View Controller -->
+  <div style="display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; align-items:center;">
+    <div class="segmented" role="tablist" style="margin:0;">
+      <button type="button" class="active" id="tab-att-my" onclick="switchAttTab('my')">
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+        <span>My Timesheet</span>
+      </button>
+      <button type="button" id="tab-att-team" onclick="switchAttTab('team')" style="display:none;">
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Team Status (Today)</span>
+      </button>
+      <button type="button" id="tab-att-reg" onclick="switchAttTab('reg')" style="display:none;">
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+        <span>Regularization Requests</span>
+        <span id="badge-att-reg-count" class="pill pill-pending" style="font-size:10.5px; padding:1px 6px; margin-left:4px; display:none;">0</span>
+      </button>
+    </div>
   </div>
 
-  <!-- Section: My Timesheet -->
+  <!-- SECTION 1: MY TIMESHEET (Calendar & Monthly Stats) -->
   <div id="att-my-container">
-    <!-- Quick Metric Cards with Professional SVG Icons -->
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:24px;">
-      <div class="card" style="padding:20px;">
+    <!-- 5 Modern KPI Metric Cards -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:16px; margin-bottom:24px;">
+      
+      <div class="card" style="padding:18px 20px;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <span style="font-size:11.5px; color:var(--sd-text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Present Days</span>
-          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="var(--sd-success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;">
-            <circle cx="12" cy="12" r="10"></circle>
-            <path d="m9 12 2 2 4-4"></path>
-          </svg>
+          <div style="width:34px; height:34px; border-radius:8px; background:rgba(34, 197, 94, 0.12); display:flex; align-items:center; justify-content:center;">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="var(--sd-success)" stroke-width="2" style="width:18px;height:18px;"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+          </div>
         </div>
-        <h3 style="font-size:26px; font-weight:800; color:var(--sd-success); margin-top:6px;" id="metric-att-present">0</h3>
+        <h3 style="font-size:26px; font-weight:800; color:var(--sd-success); margin-top:8px; margin-bottom:0;" id="metric-att-present">0</h3>
       </div>
       
-      <div class="card" style="padding:20px;">
+      <div class="card" style="padding:18px 20px;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <span style="font-size:11.5px; color:var(--sd-text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Half Days</span>
-          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="var(--sd-warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;">
-            <circle cx="12" cy="12" r="10"></circle>
-            <polyline points="12 6 12 12 16 14"></polyline>
-          </svg>
+          <div style="width:34px; height:34px; border-radius:8px; background:rgba(217, 119, 6, 0.12); display:flex; align-items:center; justify-content:center;">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="var(--sd-warning)" stroke-width="2" style="width:18px;height:18px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
         </div>
-        <h3 style="font-size:26px; font-weight:800; color:var(--sd-warning); margin-top:6px;" id="metric-att-halfday">0</h3>
+        <h3 style="font-size:26px; font-weight:800; color:var(--sd-warning); margin-top:8px; margin-bottom:0;" id="metric-att-halfday">0</h3>
       </div>
 
-      <div class="card" style="padding:20px;">
+      <div class="card" style="padding:18px 20px;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size:11.5px; color:var(--sd-text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Absent</span>
-          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="var(--sd-danger)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="15" x2="9" y1="9" y2="15"></line>
-            <line x1="9" x2="15" y1="9" y2="15"></line>
-          </svg>
+          <span style="font-size:11.5px; color:var(--sd-text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Absent Days</span>
+          <div style="width:34px; height:34px; border-radius:8px; background:rgba(220, 38, 38, 0.12); display:flex; align-items:center; justify-content:center;">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="var(--sd-danger)" stroke-width="2" style="width:18px;height:18px;"><circle cx="12" cy="12" r="10"/><line x1="15" x2="9" y1="9" y2="15"/><line x1="9" x2="15" y1="9" y2="15"/></svg>
+          </div>
         </div>
-        <h3 style="font-size:26px; font-weight:800; color:var(--sd-danger); margin-top:6px;" id="metric-att-absent">0</h3>
+        <h3 style="font-size:26px; font-weight:800; color:var(--sd-danger); margin-top:8px; margin-bottom:0;" id="metric-att-absent">0</h3>
       </div>
 
-      <div class="card" style="padding:20px;">
+      <div class="card" style="padding:18px 20px;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size:11.5px; color:var(--sd-text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Total Hours</span>
-          <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="var(--sd-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;">
-            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
-            <polyline points="16 7 22 7 22 13"></polyline>
-          </svg>
+          <span style="font-size:11.5px; color:var(--sd-text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Total Worked</span>
+          <div style="width:34px; height:34px; border-radius:8px; background:rgba(37, 99, 235, 0.12); display:flex; align-items:center; justify-content:center;">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="var(--sd-primary)" stroke-width="2" style="width:18px;height:18px;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+          </div>
         </div>
-        <h3 style="font-size:26px; font-weight:800; color:var(--sd-primary); margin-top:6px;" id="metric-att-hours">0h</h3>
+        <h3 style="font-size:26px; font-weight:800; color:var(--sd-primary); margin-top:8px; margin-bottom:0;" id="metric-att-hours">0 hrs</h3>
+      </div>
+
+      <div class="card" style="padding:18px 20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:11.5px; color:var(--sd-text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Avg Daily Hours</span>
+          <div style="width:34px; height:34px; border-radius:8px; background:rgba(79, 70, 229, 0.12); display:flex; align-items:center; justify-content:center;">
+            <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" style="width:18px;height:18px;"><path d="M12 2v20"/><path d="m17 5-5-3-5 3"/><path d="m17 19-5 3-5-3"/></svg>
+          </div>
+        </div>
+        <h3 style="font-size:26px; font-weight:800; color:#4F46E5; margin-top:8px; margin-bottom:0;" id="metric-att-avg">0h / day</h3>
       </div>
     </div>
 
-    <!-- Calendar Month View -->
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">Monthly Attendance Grid</h3>
-        <div style="display:flex; align-items:center; gap:16px; font-size:12px; font-weight:500;">
+    <!-- Monthly Attendance Calendar Grid -->
+    <div class="card" style="padding:22px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
+        <h3 style="font-size:16px; font-weight:700; color:var(--sd-navy); margin:0;" id="att-calendar-month-title">Monthly Attendance Grid</h3>
+        <div style="display:flex; align-items:center; gap:14px; font-size:12px; font-weight:600; flex-wrap:wrap;">
           <span style="display:flex; align-items:center; gap:6px;"><span style="width:8px; height:8px; background:var(--sd-success); border-radius:50%;"></span> Present</span>
           <span style="display:flex; align-items:center; gap:6px;"><span style="width:8px; height:8px; background:var(--sd-warning); border-radius:50%;"></span> Half-Day</span>
           <span style="display:flex; align-items:center; gap:6px;"><span style="width:8px; height:8px; background:var(--sd-danger); border-radius:50%;"></span> Absent</span>
-          <span style="display:flex; align-items:center; gap:6px;"><span style="width:8px; height:8px; background:var(--sd-primary); border-radius:50%;"></span> Holiday</span>
+          <span style="display:flex; align-items:center; gap:6px;"><span style="width:8px; height:8px; background:var(--sd-primary); border-radius:50%;"></span> Regularized</span>
+          <span style="display:flex; align-items:center; gap:6px;"><span style="width:8px; height:8px; background:var(--sd-border); border-radius:50%;"></span> Weekend</span>
         </div>
       </div>
 
-      <div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:8px; text-align:center; font-weight:600; font-size:12px; color:var(--sd-text-muted); margin-bottom:8px;">
+      <!-- Day Headers -->
+      <div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:10px; text-align:center; font-weight:700; font-size:12px; color:var(--sd-text-muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">
         <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
       </div>
-      <div id="att-calendar-grid" style="display:grid; grid-template-columns:repeat(7, 1fr); gap:8px;">
-        <!-- Days or Skeleton rendered via JS -->
+
+      <!-- Interactive Calendar Cells -->
+      <div id="att-calendar-grid" style="display:grid; grid-template-columns:repeat(7, 1fr); gap:10px;">
+        <!-- Days or Skeletons rendered via JS -->
       </div>
     </div>
   </div>
 
-  <!-- Section: Team Today -->
+  <!-- SECTION 2: TEAM ATTENDANCE (Manager & HR View) -->
   <div id="att-team-container" style="display:none;" class="card">
-    <div class="card-header">
-      <h3 class="card-title">Team Attendance Status (Today)</h3>
+    <div style="padding:20px; border-bottom:1px solid var(--sd-border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+      <div>
+        <h3 style="font-size:16px; font-weight:700; color:var(--sd-navy); margin:0;">Team Attendance Status (Today)</h3>
+        <p style="font-size:12.5px; color:var(--sd-text-muted); margin:2px 0 0 0;">Real-time clock-in status for direct reports and departmental staff.</p>
+      </div>
+      <div style="min-width:240px; position:relative;">
+        <input type="text" id="att-team-search" class="form-control" placeholder="Search team members..." oninput="filterTeamAttendanceTable()" style="padding-left:32px;">
+        <svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:var(--sd-text-muted); pointer-events:none;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      </div>
     </div>
+
     <div class="table-container" style="border:none; box-shadow:none;">
       <table class="data-table">
         <thead>
           <tr>
             <th>Employee</th>
+            <th>Designation</th>
             <th>Department</th>
             <th>Status</th>
-            <th>Check In</th>
-            <th>Check Out</th>
+            <th>Punch In</th>
+            <th>Punch Out</th>
             <th>Worked Hours</th>
           </tr>
         </thead>
@@ -144,213 +199,562 @@
       </table>
     </div>
   </div>
+
+  <!-- SECTION 3: REGULARIZATION APPROVALS (Manager & HR View) -->
+  <div id="att-reg-container" style="display:none;" class="card">
+    <div style="padding:20px; border-bottom:1px solid var(--sd-border);">
+      <h3 style="font-size:16px; font-weight:700; color:var(--sd-navy); margin:0;">Pending Regularization Requests</h3>
+      <p style="font-size:12.5px; color:var(--sd-text-muted); margin:2px 0 0 0;">Review missed clock-in or adjustment requests submitted by your team.</p>
+    </div>
+
+    <div class="table-container" style="border:none; box-shadow:none;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Department</th>
+            <th>Requested Date</th>
+            <th>Reason Provided</th>
+            <th style="text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="att-reg-table-tbody">
+          <!-- Populated via JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
 <script>
-let myAttendanceData = null;
+  let myAttendanceData = null;
+  let teamAttendanceCache = [];
+  let pendingRegularizationsCache = [];
 
-function updateAttLiveClock() {
-  const el = document.getElementById('att-live-clock');
-  if (el) {
-    el.textContent = new Date().toLocaleTimeString();
-  }
-}
-setInterval(updateAttLiveClock, 1000);
-
-function loadModule_attendance() {
-  const d = new Date();
-  const ySelect = document.getElementById('att-year-picker');
-  const mSelect = document.getElementById('att-month-picker');
-  if (ySelect && !ySelect.value) ySelect.value = String(d.getFullYear());
-  if (mSelect && !mSelect.value) mSelect.value = String(d.getMonth() + 1);
-
-  const user = App.user;
-  if (user && (user.role === 'manager' || user.role === 'hr' || user.role === 'admin')) {
-    const teamTab = document.getElementById('tab-att-team');
-    if (teamTab) teamTab.style.display = 'inline-flex';
-  }
-
-  updateAttLiveClock();
-  syncAttendancePunchBanner();
-  loadAttendanceData();
-}
-
-function syncAttendancePunchBanner() {
-  const isPunchedIn = App.punchStatus && App.punchStatus.isPunchedIn;
-  const todayRec = App.punchStatus && App.punchStatus.todayRecord;
-  const btn = document.getElementById('att-main-punch-btn');
-  const label = document.getElementById('att-main-punch-label');
-  const note = document.getElementById('att-punch-status-note');
-
-  if (!btn || !label) return;
-
-  if (isPunchedIn) {
-    btn.className = 'btn btn-danger';
-    label.textContent = 'Clock Out';
-    if (note) {
-      const inTime = todayRec && todayRec.punchInTime ? new Date(todayRec.punchInTime).toLocaleTimeString() : '';
-      note.textContent = inTime ? `Active session started at ${inTime}` : 'You are currently clocked in';
-    }
-  } else {
-    btn.className = 'btn btn-primary';
-    label.textContent = 'Clock In';
-    if (note) {
-      note.textContent = 'Not clocked in for today yet';
+  /* ---------- 1. Live Digital Clock Station ---------- */
+  function updateAttLiveClock() {
+    const el = document.getElementById('att-live-clock');
+    if (el) {
+      const now = new Date();
+      el.textContent = now.toLocaleTimeString();
     }
   }
-}
+  setInterval(updateAttLiveClock, 1000);
 
-function loadAttendanceData() {
-  const year = Number(document.getElementById('att-year-picker')?.value) || new Date().getFullYear();
-  const month = Number(document.getElementById('att-month-picker')?.value) || (new Date().getMonth() + 1);
-
-  // Show calendar skeleton placeholder while loading
-  const mount = document.getElementById('att-calendar-grid');
-  if (mount) {
-    let skel = '';
-    for (let i = 0; i < 35; i++) {
-      skel += `<div class="skeleton" style="height:76px; border-radius:8px;"></div>`;
+  /* ---------- 2. Module Entry Hook ---------- */
+  function loadModule_attendance() {
+    const d = new Date();
+    const ySelect = document.getElementById('att-year-picker');
+    const mSelect = document.getElementById('att-month-picker');
+    
+    // Automatically select the real current year and current month
+    if (ySelect && !ySelect.dataset.userSelected) {
+      ySelect.value = String(d.getFullYear());
     }
-    mount.innerHTML = skel;
-  }
-
-  callApi('Api_Attendance_getMy', [year, month], function(res) {
-    myAttendanceData = res;
-    if (res && res.stats) {
-      document.getElementById('metric-att-present').textContent = res.stats.presentCount;
-      document.getElementById('metric-att-halfday').textContent = res.stats.halfDayCount;
-      document.getElementById('metric-att-absent').textContent = res.stats.absentCount;
-      document.getElementById('metric-att-hours').textContent = res.stats.totalHours + 'h';
+    if (mSelect && !mSelect.dataset.userSelected) {
+      mSelect.value = String(d.getMonth() + 1);
     }
-    renderAttendanceCalendar(year, month, res.records || []);
+
+    // Check Role Permissions for Manager / HR / Admin Sub-tabs
+    const user = App.user;
+    if (user) {
+      const r = String(user.role || '').toLowerCase();
+      const isManagerOrAbove = (r === 'manager' || r === 'hr' || r === 'admin' || r === 'executive' || r === 'superadmin');
+      const teamTab = document.getElementById('tab-att-team');
+      const regTab = document.getElementById('tab-att-reg');
+      if (teamTab) teamTab.style.display = isManagerOrAbove ? 'inline-flex' : 'none';
+      if (regTab) regTab.style.display = isManagerOrAbove ? 'inline-flex' : 'none';
+    }
+
+    updateAttLiveClock();
     syncAttendancePunchBanner();
-  }, showToastError);
-}
-
-function renderAttendanceCalendar(year, month, records) {
-  const mount = document.getElementById('att-calendar-grid');
-  if (!mount) return;
-
-  const firstDay = new Date(year, month - 1, 1).getDay();
-  const totalDays = new Date(year, month, 0).getDate();
-  const recordMap = {};
-  records.forEach(r => {
-    recordMap[r.date] = r;
-  });
-
-  let html = '';
-  // Empty offset days
-  for (let i = 0; i < firstDay; i++) {
-    html += `<div style="height:76px; background:var(--sd-surface-subtle); border-radius:8px; opacity:0.4;"></div>`;
+    loadAttendanceData();
   }
 
-  // Days of month
-  for (let d = 1; d <= totalDays; d++) {
-    const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const rec = recordMap[dateStr];
-    const dayOfWeek = new Date(year, month - 1, d).getDay();
-    const isWknd = (dayOfWeek === 0 || dayOfWeek === 6);
+  window.loadModule_attendance = loadModule_attendance;
 
-    let statusClass = isWknd ? 'pill-weekend' : 'pill-absent';
-    let statusLabel = isWknd ? 'Weekend' : 'Absent';
-    let hoursText = '';
+  /* ---------- 3. Dynamic Punch Desk Banner State ---------- */
+  function syncAttendancePunchBanner() {
+    const isPunchedIn = App.punchStatus && App.punchStatus.isPunchedIn;
+    const todayRec = App.punchStatus && App.punchStatus.todayRecord;
+    const btn = document.getElementById('att-main-punch-btn');
+    const label = document.getElementById('att-main-punch-label');
+    const iconSpan = document.getElementById('att-punch-btn-icon');
+    const note = document.getElementById('att-punch-status-note');
 
-    if (rec) {
-      statusLabel = rec.status;
-      if (rec.status === 'Present') statusClass = 'pill-present';
-      else if (rec.status === 'Half-Day') statusClass = 'pill-halfday';
-      else if (rec.status === 'On-Leave') statusClass = 'pill-leave';
-      else if (rec.status === 'Holiday') statusClass = 'pill-holiday';
+    if (!btn) return;
 
-      if (rec.workedHours) hoursText = `${rec.workedHours}h`;
+    btn.disabled = false;
+    btn.style.removeProperty('opacity');
+    const clockSvg = `<svg class="lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
+    if (iconSpan) iconSpan.innerHTML = clockSvg;
+
+    if (isPunchedIn) {
+      btn.className = 'button button-danger';
+      btn.style.setProperty('background', '#DC2626', 'important');
+      btn.style.setProperty('border', '1px solid #B91C1C', 'important');
+      btn.style.setProperty('color', '#FFFFFF', 'important');
+      btn.style.setProperty('box-shadow', '0 2px 6px rgba(220, 38, 38, 0.4)', 'important');
+      if (label) label.textContent = 'Clock Out';
+      if (note) {
+        const inTime = todayRec && todayRec.punchInTime ? new Date(todayRec.punchInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        note.innerHTML = `<span class="pill pill-approved" style="font-size:11px; padding:2px 7px;">● Punched In</span> Active session started at <strong>${inTime || 'earlier today'}</strong>`;
+      }
+    } else {
+      btn.className = 'button button-success';
+      btn.style.setProperty('background', '#16A34A', 'important');
+      btn.style.setProperty('border', '1px solid #15803D', 'important');
+      btn.style.setProperty('color', '#FFFFFF', 'important');
+      btn.style.setProperty('box-shadow', '0 2px 6px rgba(22, 163, 74, 0.4)', 'important');
+      if (label) label.textContent = 'Clock In';
+      if (note) {
+        note.innerHTML = `<span class="pill pill-pending" style="font-size:11px; padding:2px 7px;">○ Not Clocked In</span> Ready to record today's punch.`;
+      }
+    }
+  }
+
+  /* ---------- 4. Trigger Punch In / Out Action ---------- */
+  function triggerAttendancePunch() {
+    const isPunchedIn = App.punchStatus && App.punchStatus.isPunchedIn;
+    const action = isPunchedIn ? 'OUT' : 'IN';
+    const btn = document.getElementById('att-main-punch-btn');
+    const label = document.getElementById('att-main-punch-label');
+    const iconSpan = document.getElementById('att-punch-btn-icon');
+
+    if (btn) {
+      btn.disabled = true;
+      btn.style.setProperty('opacity', '0.9', 'important');
+      if (iconSpan) {
+        iconSpan.innerHTML = `<span class="sd-spinner" style="width:14px; height:14px; border:2px solid rgba(255,255,255,0.35); border-top-color:#FFFFFF; border-radius:50%; display:inline-block; animation:sdSpin 0.7s linear infinite;"></span>`;
+      }
+      if (label) {
+        label.textContent = action === 'IN' ? 'Clocking In…' : 'Clocking Out…';
+      }
+
+      // Preserve appropriate vivid color during buffering - NEVER GREY!
+      if (action === 'OUT') {
+        btn.className = 'button button-danger';
+        btn.style.setProperty('background', '#DC2626', 'important');
+        btn.style.setProperty('border', '1px solid #B91C1C', 'important');
+        btn.style.setProperty('color', '#FFFFFF', 'important');
+      } else {
+        btn.className = 'button button-success';
+        btn.style.setProperty('background', '#16A34A', 'important');
+        btn.style.setProperty('border', '1px solid #15803D', 'important');
+        btn.style.setProperty('color', '#FFFFFF', 'important');
+      }
     }
 
-    html += `
-      <div style="min-height:76px; background:var(--sd-surface); border:1px solid var(--sd-border); border-radius:8px; padding:8px 10px; display:flex; flex-direction:column; justify-content:space-between; cursor:pointer; transition:var(--sd-transition);" onclick="openDayDetail('${dateStr}')">
-        <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700;">
-          <span style="color:var(--sd-navy);">${d}</span>
-          <span style="font-size:10px; color:var(--sd-text-muted); font-family:'JetBrains Mono',monospace;">${hoursText}</span>
+    // Safety timer: re-enable after 8s so button never stays stuck buffering
+    const safetyTimer = setTimeout(function() {
+      if (btn && btn.disabled) {
+        btn.disabled = false;
+        btn.style.removeProperty('opacity');
+        syncAttendancePunchBanner();
+        showToast('Punch request took longer than expected. Status refreshed.', 'warning');
+      }
+    }, 8000);
+
+    const reqId = (typeof newRequestId === 'function') ? newRequestId() : ('req_' + Date.now());
+
+    callApi('Api_Attendance_punch', [action, 'Office Location', reqId], function(res) {
+      clearTimeout(safetyTimer);
+      if (btn) {
+        btn.disabled = false;
+        btn.style.removeProperty('opacity');
+      }
+      
+      // Update global punch status state
+      App.punchStatus = App.punchStatus || {};
+      App.punchStatus.isPunchedIn = (action === 'IN');
+      App.punchStatus.todayRecord = res || { punchInTime: new Date() };
+
+      syncAttendancePunchBanner();
+      if (typeof updatePunchButtonUI === 'function') {
+        updatePunchButtonUI(App.punchStatus.isPunchedIn, App.punchStatus.todayRecord);
+      }
+
+      showToast(action === 'IN' ? 'Successfully clocked in for today!' : 'Successfully clocked out. Have a great evening!', 'success');
+      loadAttendanceData();
+    }, function(err) {
+      clearTimeout(safetyTimer);
+      if (btn) {
+        btn.disabled = false;
+        btn.style.removeProperty('opacity');
+      }
+      syncAttendancePunchBanner();
+      showToast('Punch failed: ' + (err?.message || err || 'Please retry'), 'error');
+    });
+  }
+
+  /* ---------- 5. Load Monthly Attendance Data from Sheet ---------- */
+  function loadAttendanceData() {
+    const year = Number(document.getElementById('att-year-picker')?.value) || new Date().getFullYear();
+    const month = Number(document.getElementById('att-month-picker')?.value) || (new Date().getMonth() + 1);
+
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const titleEl = document.getElementById('att-calendar-month-title');
+    if (titleEl) titleEl.textContent = `Monthly Attendance Grid — ${monthNames[month - 1]} ${year}`;
+
+    // Skeleton placeholder
+    const mount = document.getElementById('att-calendar-grid');
+    if (mount) {
+      let skel = '';
+      for (let i = 0; i < 35; i++) {
+        skel += `<div class="skeleton" style="height:78px; border-radius:10px;"></div>`;
+      }
+      mount.innerHTML = skel;
+    }
+
+    callApi('Api_Attendance_getMy', [year, month], function(res) {
+      myAttendanceData = res || { records: [], stats: {} };
+      const stats = myAttendanceData.stats || {};
+      
+      const presEl = document.getElementById('metric-att-present');
+      const halfEl = document.getElementById('metric-att-halfday');
+      const absEl = document.getElementById('metric-att-absent');
+      const hrsEl = document.getElementById('metric-att-hours');
+      const avgEl = document.getElementById('metric-att-avg');
+
+      if (presEl) presEl.textContent = stats.presentCount || 0;
+      if (halfEl) halfEl.textContent = stats.halfDayCount || 0;
+      if (absEl) absEl.textContent = stats.absentCount || 0;
+      if (hrsEl) hrsEl.textContent = (stats.totalHours || 0) + ' hrs';
+      if (avgEl) avgEl.textContent = (stats.avgHours || 0) + 'h / day';
+
+      renderAttendanceCalendar(year, month, myAttendanceData.records || []);
+      syncAttendancePunchBanner();
+    }, function(err) {
+      console.warn('Attendance load error:', err);
+      showToast('Could not fetch attendance records: ' + (err.message || err), 'warning');
+    });
+
+    // If Manager/Admin, check pending regularizations
+    const user = App.user;
+    if (user && (user.role === 'manager' || user.role === 'hr' || user.role === 'admin' || user.role === 'superadmin')) {
+      checkPendingRegularizationsCount();
+    }
+  }
+
+  /* ---------- 6. Render Monthly Calendar Grid ---------- */
+  function renderAttendanceCalendar(year, month, records) {
+    const mount = document.getElementById('att-calendar-grid');
+    if (!mount) return;
+
+    const firstDay = new Date(year, month - 1, 1).getDay();
+    const totalDays = new Date(year, month, 0).getDate();
+    const recordMap = {};
+    (records || []).forEach(r => {
+      if (r && r.date) recordMap[r.date] = r;
+    });
+
+    let html = '';
+    // Offset blank days for start of month
+    for (let i = 0; i < firstDay; i++) {
+      html += `<div style="height:78px; background:var(--sd-surface-subtle); border-radius:10px; opacity:0.35; border:1px dashed var(--sd-border);"></div>`;
+    }
+
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    // Render each day of the month
+    for (let d = 1; d <= totalDays; d++) {
+      const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const rec = recordMap[dateStr];
+      const dayOfWeek = new Date(year, month - 1, d).getDay();
+      const isWknd = (dayOfWeek === 0 || dayOfWeek === 6);
+      const isToday = (dateStr === todayStr);
+
+      let statusClass = isWknd ? 'pill-neutral' : 'pill-rejected';
+      let statusLabel = isWknd ? 'Weekend' : 'Absent';
+      let hoursBadge = '';
+
+      if (rec) {
+        statusLabel = rec.status || 'Present';
+        const sLower = String(rec.status || '').toLowerCase();
+        if (sLower === 'present') statusClass = 'pill-approved';
+        else if (sLower === 'half-day') statusClass = 'pill-pending';
+        else if (sLower === 'on-leave') statusClass = 'pill-neutral';
+        else if (sLower === 'holiday') statusClass = 'pill-neutral';
+
+        if (rec.workedHours) {
+          hoursBadge = `<span style="font-size:11px; font-weight:700; color:var(--sd-primary); font-family:'JetBrains Mono',monospace;">${rec.workedHours}h</span>`;
+        }
+      }
+
+      html += `
+        <div style="min-height:78px; background:var(--sd-surface); border:1px solid ${isToday ? 'var(--sd-primary)' : 'var(--sd-border)'}; ${isToday ? 'box-shadow:0 0 0 2px rgba(37,99,235,0.2);' : ''} border-radius:10px; padding:10px; display:flex; flex-direction:column; justify-content:space-between; cursor:pointer; transition:var(--sd-transition);" onclick="openDayDetailModal('${dateStr}')" title="Click to view timesheet details for ${dateStr}">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:13px; font-weight:800; color:${isToday ? 'var(--sd-primary)' : 'var(--sd-navy)'};">${d}</span>
+            ${hoursBadge}
+          </div>
+          <div style="margin-top:6px;">
+            <span class="pill ${statusClass}" style="font-size:10px; padding:2px 6px; display:inline-block; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${statusLabel}</span>
+          </div>
         </div>
-        <div style="margin-top:6px;">
-          <span class="pill ${statusClass}" style="font-size:9.5px; padding:2px 6px;">${statusLabel}</span>
+      `;
+    }
+
+    mount.innerHTML = html;
+  }
+
+  /* ---------- 7. Timesheet Day Detail & Regularization Modal ---------- */
+  function openDayDetailModal(dateStr) {
+    const rec = myAttendanceData?.records?.find(r => r.date === dateStr);
+    const inTime = rec?.punchInTime ? new Date(rec.punchInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
+    const outTime = rec?.punchOutTime ? new Date(rec.punchOutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
+    const status = rec?.status || 'Absent';
+    const hours = rec?.workedHours || 0;
+    const canRegularize = (!rec || status === 'Absent' || status === 'Half-Day');
+
+    const bodyHtml = `
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <!-- Day Summary Banner -->
+        <div style="background:var(--sd-surface-subtle); border:1px solid var(--sd-border); border-radius:10px; padding:14px 16px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-size:11px; font-weight:700; color:var(--sd-text-muted); text-transform:uppercase;">Timesheet Date</div>
+            <div style="font-size:16px; font-weight:800; color:var(--sd-navy);">${dateStr}</div>
+          </div>
+          <span class="pill ${status === 'Present' ? 'pill-approved' : (status === 'Half-Day' ? 'pill-pending' : 'pill-rejected')}" style="font-size:12px;">
+            ${status}
+          </span>
         </div>
+
+        <!-- Punch Metrics Grid -->
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;">
+          <div style="background:var(--sd-surface); border:1px solid var(--sd-border); border-radius:8px; padding:12px; text-align:center;">
+            <div style="font-size:11px; color:var(--sd-text-muted); font-weight:600;">Clock In</div>
+            <div style="font-size:14px; font-weight:700; color:var(--sd-navy); margin-top:2px;">${inTime}</div>
+          </div>
+          <div style="background:var(--sd-surface); border:1px solid var(--sd-border); border-radius:8px; padding:12px; text-align:center;">
+            <div style="font-size:11px; color:var(--sd-text-muted); font-weight:600;">Clock Out</div>
+            <div style="font-size:14px; font-weight:700; color:var(--sd-navy); margin-top:2px;">${outTime}</div>
+          </div>
+          <div style="background:var(--sd-surface); border:1px solid var(--sd-border); border-radius:8px; padding:12px; text-align:center;">
+            <div style="font-size:11px; color:var(--sd-text-muted); font-weight:600;">Worked Hours</div>
+            <div style="font-size:14px; font-weight:700; color:var(--sd-primary); margin-top:2px;">${hours} hrs</div>
+          </div>
+        </div>
+
+        <!-- Regularization Request Box (if incomplete or absent) -->
+        ${canRegularize ? `
+          <div style="border-top:1px solid var(--sd-border); padding-top:14px;">
+            <div style="font-size:13px; font-weight:700; color:var(--sd-navy); margin-bottom:4px;">Missed or Incomplete Punch?</div>
+            <p style="font-size:12px; color:var(--sd-text-muted); margin:0 0 10px 0;">Submit a regularization request to your reporting manager with your rationale.</p>
+            <div class="form-group">
+              <label class="form-label">Reason for Regularization *</label>
+              <textarea id="att-reg-reason" class="form-control" placeholder="e.g. Forgot to clock out due to client meeting offsite…" rows="3"></textarea>
+            </div>
+          </div>
+        ` : `
+          <div style="font-size:12.5px; color:var(--sd-text-muted); text-align:center; padding:8px;">
+            This attendance entry is fully recorded and regular.
+          </div>
+        `}
       </div>
     `;
+
+    const confirmLabel = canRegularize ? 'Submit Regularization' : null;
+    showAppModal(`Timesheet Record: ${dateStr}`, bodyHtml, confirmLabel, function() {
+      const reason = document.getElementById('att-reg-reason')?.value.trim();
+      if (!reason) {
+        showToast('Please enter a brief explanation for regularization.', 'warning');
+        return;
+      }
+
+      setModalLoading(true, 'Submitting…');
+      showModalStatus('Sending regularization request to manager…', 'info');
+
+      callApi('Api_Attendance_requestRegularization', [rec?.recordId || dateStr, reason], function() {
+        showModalStatus('✓ Regularization request submitted successfully!', 'success');
+        setTimeout(function() {
+          closeAppModal();
+          showToast('Regularization request submitted to your reporting manager.', 'success');
+          loadAttendanceData();
+        }, 700);
+      }, function(err) {
+        setModalLoading(false);
+        showModalStatus('Submission failed: ' + (err.message || err), 'error');
+        showToast('Submission failed: ' + (err.message || err), 'error');
+      });
+    });
   }
 
-  mount.innerHTML = html;
-}
+  /* ---------- 8. Sub-Tab Switcher ---------- */
+  function switchAttTab(tab) {
+    const isMy = (tab === 'my');
+    const isTeam = (tab === 'team');
+    const isReg = (tab === 'reg');
 
-function openDayDetail(dateStr) {
-  const rec = myAttendanceData?.records?.find(r => r.date === dateStr);
-  const bodyHtml = `
-    <div style="padding:6px 0;">
-      <p style="font-size:13.5px; margin-bottom:12px;"><strong>Date:</strong> ${dateStr}</p>
-      <p style="font-size:13.5px; margin-bottom:8px;"><strong>Status:</strong> <span class="pill pill-${(rec?.status || 'absent').toLowerCase()}">${rec?.status || 'No Punch'}</span></p>
-      <p style="font-size:13.5px; margin-bottom:8px;"><strong>Punch In:</strong> ${rec?.punchInTime ? new Date(rec.punchInTime).toLocaleTimeString() : '—'}</p>
-      <p style="font-size:13.5px; margin-bottom:8px;"><strong>Punch Out:</strong> ${rec?.punchOutTime ? new Date(rec.punchOutTime).toLocaleTimeString() : '—'}</p>
-      <p style="font-size:13.5px; margin-bottom:16px;"><strong>Worked Hours:</strong> ${rec?.workedHours || 0} hrs</p>
+    document.getElementById('tab-att-my')?.classList.toggle('active', isMy);
+    document.getElementById('tab-att-team')?.classList.toggle('active', isTeam);
+    document.getElementById('tab-att-reg')?.classList.toggle('active', isReg);
 
-      ${(!rec || rec.status === 'Absent' || rec.status === 'Half-Day') ? `
-        <div style="margin-top:16px; border-top:1px solid var(--sd-border); padding-top:14px;">
-          <label class="form-label">Missed punch? Request Regularization</label>
-          <textarea id="att-reg-reason" class="form-control" placeholder="Explain reason for missing clock-in/out..."></textarea>
-        </div>
-      ` : ''}
-    </div>
-  `;
+    const myCont = document.getElementById('att-my-container');
+    const teamCont = document.getElementById('att-team-container');
+    const regCont = document.getElementById('att-reg-container');
 
-  const showRegAction = (!rec || rec.status === 'Absent' || rec.status === 'Half-Day');
-  showAppModal(`Timesheet Entry: ${dateStr}`, bodyHtml, showRegAction ? 'Submit Regularization' : null, function() {
-    const reason = document.getElementById('att-reg-reason')?.value;
-    if (!reason) {
-      showToast('Please provide a reason.', 'warning');
-      return;
+    if (myCont) myCont.style.display = isMy ? 'block' : 'none';
+    if (teamCont) teamCont.style.display = isTeam ? 'block' : 'none';
+    if (regCont) regCont.style.display = isReg ? 'block' : 'none';
+
+    if (isTeam) loadTeamAttendance();
+    if (isReg) loadPendingRegularizations();
+  }
+
+  /* ---------- 9. Team Attendance (Manager / Admin View) ---------- */
+  function loadTeamAttendance() {
+    const tbody = document.getElementById('att-team-table-tbody');
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:32px; color:var(--sd-text-muted);"><span class="sd-spinner"></span> Loading team attendance for today…</td></tr>`;
     }
-    callApi('Api_Attendance_requestRegularization', [rec?.recordId || dateStr, reason], function() {
-      closeAppModal();
-      showToast('Regularization request submitted to your manager', 'success');
-      loadAttendanceData();
-    }, showToastError);
-  });
-}
 
-function switchAttTab(tab) {
-  const isMy = tab === 'my';
-  document.getElementById('tab-att-my').classList.toggle('active-tab', isMy);
-  document.getElementById('tab-att-team').classList.toggle('active-tab', !isMy);
-  document.getElementById('att-my-container').style.display = isMy ? 'block' : 'none';
-  document.getElementById('att-team-container').style.display = !isMy ? 'block' : 'none';
-
-  if (!isMy) {
-    loadTeamAttendance();
-  }
-}
-
-function loadTeamAttendance() {
-  const tbody = document.getElementById('att-team-table-tbody');
-  if (tbody) {
-    tbody.innerHTML = renderSkeletonRows(4);
+    callApi('Api_Attendance_getTeam', [], function(list) {
+      teamAttendanceCache = list || [];
+      renderTeamAttendanceTable(teamAttendanceCache);
+    }, function(err) {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:32px; color:var(--sd-danger);">Could not load team status: ${err.message || err}</td></tr>`;
+    });
   }
 
-  callApi('Api_Attendance_getTeam', [], function(teamList) {
+  function renderTeamAttendanceTable(list) {
+    const tbody = document.getElementById('att-team-table-tbody');
     if (!tbody) return;
 
-    if (!teamList || !teamList.length) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--sd-text-muted);">No direct reports found.</td></tr>`;
+    if (!list || !list.length) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:36px; color:var(--sd-text-muted);">No direct reports found or team members assigned.</td></tr>`;
       return;
     }
 
-    tbody.innerHTML = teamList.map(m => `
+    tbody.innerHTML = list.map(m => {
+      const att = m.attendance || {};
+      const status = att.status || 'Absent';
+      const statusClass = status === 'Present' ? 'pill-approved' : (status === 'Half-Day' ? 'pill-pending' : 'pill-rejected');
+      const inTime = att.punchInTime ? new Date(att.punchInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
+      const outTime = att.punchOutTime ? new Date(att.punchOutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
+      const hours = att.workedHours || 0;
+
+      const initials = (m.fullName || 'User')
+        .trim()
+        .split(' ')
+        .map(n => n[0])
+        .join('')
+        .substring(0, 2)
+        .toUpperCase();
+
+      return `
+        <tr>
+          <td>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div class="avatar" style="width:34px; height:34px; font-size:12px; background:#0B1635; color:#FFF;">${initials}</div>
+              <div>
+                <strong style="color:var(--sd-navy); font-size:13.5px;">${m.fullName}</strong>
+                <div style="font-size:11px; color:var(--sd-text-muted);"><code>${m.empId}</code></div>
+              </div>
+            </div>
+          </td>
+          <td style="font-size:13px; font-weight:600; color:var(--sd-primary);">${m.designation || 'Staff'}</td>
+          <td style="font-size:13px; color:var(--sd-text-secondary);">${m.department || 'General'}</td>
+          <td><span class="pill ${statusClass}">${status}</span></td>
+          <td style="font-size:13px; font-weight:600;">${inTime}</td>
+          <td style="font-size:13px; font-weight:600;">${outTime}</td>
+          <td style="font-size:13px; font-weight:700; color:var(--sd-navy); font-family:'JetBrains Mono',monospace;">${hours} hrs</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function filterTeamAttendanceTable() {
+    const q = (document.getElementById('att-team-search')?.value || '').toLowerCase().trim();
+    const filtered = teamAttendanceCache.filter(m => 
+      !q || (m.fullName && m.fullName.toLowerCase().includes(q)) ||
+      (m.empId && m.empId.toLowerCase().includes(q)) ||
+      (m.department && m.department.toLowerCase().includes(q))
+    );
+    renderTeamAttendanceTable(filtered);
+  }
+
+  /* ---------- 10. Regularization Approvals (Manager / Admin View) ---------- */
+  function checkPendingRegularizationsCount() {
+    callApi('Api_Attendance_getPendingRegularizations', [], function(list) {
+      pendingRegularizationsCache = list || [];
+      const badge = document.getElementById('badge-att-reg-count');
+      if (badge) {
+        badge.textContent = pendingRegularizationsCache.length;
+        badge.style.display = pendingRegularizationsCache.length > 0 ? 'inline-block' : 'none';
+      }
+    });
+  }
+
+  function loadPendingRegularizations() {
+    const tbody = document.getElementById('att-reg-table-tbody');
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:32px; color:var(--sd-text-muted);"><span class="sd-spinner"></span> Loading pending requests…</td></tr>`;
+    }
+
+    callApi('Api_Attendance_getPendingRegularizations', [], function(list) {
+      pendingRegularizationsCache = list || [];
+      renderRegularizationsTable(pendingRegularizationsCache);
+    }, function(err) {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:32px; color:var(--sd-danger);">Failed to load requests: ${err.message || err}</td></tr>`;
+    });
+  }
+
+  function renderRegularizationsTable(list) {
+    const tbody = document.getElementById('att-reg-table-tbody');
+    if (!tbody) return;
+
+    if (!list || !list.length) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:36px; color:var(--sd-text-muted);">No pending regularization requests awaiting approval.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = list.map(item => `
       <tr>
-        <td><strong>${m.fullName}</strong> <code style="font-size:11px; color:var(--sd-text-muted);">(${m.empId})</code></td>
-        <td>${m.department || '—'}</td>
-        <td><span class="pill pill-${(m.attendance.status || 'absent').toLowerCase()}">${m.attendance.status || 'Absent'}</span></td>
-        <td>${m.attendance.punchInTime ? new Date(m.attendance.punchInTime).toLocaleTimeString() : '—'}</td>
-        <td>${m.attendance.punchOutTime ? new Date(m.attendance.punchOutTime).toLocaleTimeString() : '—'}</td>
-        <td><strong>${m.attendance.workedHours || 0} hrs</strong></td>
+        <td>
+          <strong style="color:var(--sd-navy); font-size:13.5px;">${item.employeeName || item.empId}</strong>
+          <div style="font-size:11px; color:var(--sd-text-muted);"><code>${item.empId}</code></div>
+        </td>
+        <td style="font-size:13px; color:var(--sd-text-secondary);">${item.department || 'General'}</td>
+        <td style="font-size:13px; font-weight:700; color:var(--sd-navy);">${item.date}</td>
+        <td style="font-size:13px; color:var(--sd-text-primary); max-width:280px;">${item.regularizationReason || 'Missed Punch'}</td>
+        <td style="text-align:right;">
+          <button class="button button-success button-sm" type="button" onclick="resolveRegularization('${item.recordId}', true)" style="margin-right:6px;">
+            Approve
+          </button>
+          <button class="button button-secondary button-sm" type="button" onclick="resolveRegularization('${item.recordId}', false)">
+            Reject
+          </button>
+        </td>
       </tr>
     `).join('');
-  }, showToastError);
-}
+  }
+
+  function resolveRegularization(recordId, isApproved) {
+    const actionLabel = isApproved ? 'Approve' : 'Reject';
+    if (!confirm(`Are you sure you want to ${actionLabel} this attendance regularization request?`)) return;
+
+    showToast(`${actionLabel}ing regularization…`, 'info');
+    callApi('Api_Attendance_actionRegularization', [recordId, isApproved, ''], function(res) {
+      showToast(`Regularization ${isApproved ? 'Approved' : 'Rejected'} successfully.`, 'success');
+      loadPendingRegularizations();
+      checkPendingRegularizationsCount();
+      loadAttendanceData();
+    }, function(err) {
+      showToast('Action failed: ' + (err.message || err), 'error');
+    });
+  }
+
+  // Initialize month and year selectors immediately on script parse
+  (function initPickers() {
+    const d = new Date();
+    const ySelect = document.getElementById('att-year-picker');
+    const mSelect = document.getElementById('att-month-picker');
+    if (ySelect && !ySelect.dataset.userSelected) ySelect.value = String(d.getFullYear());
+    if (mSelect && !mSelect.dataset.userSelected) mSelect.value = String(d.getMonth() + 1);
+  })();
+
+  // Automatic immediate load on module activation
+  if (window.location.hash === '#attendance' || document.getElementById('module-attendance')?.style.display !== 'none') {
+    loadModule_attendance();
+  }
 </script>
